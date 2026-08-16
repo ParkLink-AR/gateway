@@ -1,0 +1,35 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    ports:
+      - "5672:5672"   # AMQP
+      - "15672:15672" # management UI (guest/guest)
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - parklink_rabbitmq_data:/var/lib/rabbitmq
+
+  gateway:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL:-http://auth-service:8000}
+      - PARKING_SERVICE_URL=${PARKING_SERVICE_URL:-http://parking-service:3001}
+      - PAYMENT_SERVICE_URL=${PAYMENT_SERVICE_URL:-http://payment-service:8004}
+      - BOOKING_SERVICE_URL=${BOOKING_SERVICE_URL:-}
+      - JWT_SECRET=${JWT_SECRET:-dev-secret-change-me}
+      - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+      - EVENTS_EXCHANGE=${EVENTS_EXCHANGE:-parklink.events}
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+volumes:
+  parklink_rabbitmq_data:

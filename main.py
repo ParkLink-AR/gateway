@@ -1,0 +1,66 @@
+from contextlib import asynccontextmanager
+
+import httpx
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from loguru import logger
+
+from app.config import settings
+from app.logger import setup_logger
+from app.middleware import AccessLogMiddleware
+from app.proxy import SERVICE_BASE_URL_ATTR
+from app.rabbitmq import rabbitmq_client
+from app.routes import register_routes
+
+setup_logger()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    app.state.http_client = httpx.AsyncClient(timeout=settings.UPSTREAM_TIMEOUT_SECONDS)
+    await rabbitmq_client.connect()
+    logger.info("[STARTUP] ParkLink Gateway iniciado")
+    yield
+    await app.state.http_client.aclose()
+    await rabbitmq_client.close()
+    logger.info("[SHUTDOWN] ParkLink Gateway detenido")
+
+
+app = FastAPI(title="ParkLink Gateway", version="1.0.0", lifespan=lifespan)
+
+app.add_middleware(AccessLogMiddleware)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins_list,
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+register_routes(app)
+
+
+@app.get("/livez", tags=["health"])
+def livez():
+    """El proceso HTTP está vivo y puede recibir requests."""
+    return {"status": "alive"}
+
+
+@app.get("/readyz", tags=["health"])
+def readyz():
+    """El gateway puede operar. No implica que los microservicios downstream
+    estén sanos -- eso lo reporta /health con más detalle."""
+    return {"status": "ready"}
+
+
+@app.get("/health", tags=["health"])
+def health():
+    configured_services = {
+        service: bool(getattr(settings, attr, ""))
+        for service, attr in SERVICE_BASE_URL_ATTR.items()
+    }
+    return {
+        "status": "ok",
+        "rabbitmq": "connected" if rabbitmq_client.is_connected else "disconnected",
+        "services_configured": configured_services,
+    }
