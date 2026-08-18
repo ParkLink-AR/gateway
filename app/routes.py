@@ -33,10 +33,12 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["DELETE"], "/auth/sessions/{session_id}", "auth", REQUIRED),
     ProxyRoute(["POST"], "/auth/email-verification/request", "auth", PUBLIC),
     ProxyRoute(["POST"], "/auth/email-verification/confirm", "auth", PUBLIC),
+    ProxyRoute(["POST"], "/auth/registration/email/request", "auth", PUBLIC),
+    ProxyRoute(["POST"], "/auth/registration/email/confirm", "auth", PUBLIC),
+    ProxyRoute(["POST"], "/auth/registration/phone/request", "auth", PUBLIC),
+    ProxyRoute(["POST"], "/auth/registration/phone/confirm", "auth", PUBLIC),
     ProxyRoute(["POST"], "/auth/password-reset/request", "auth", PUBLIC),
     ProxyRoute(["POST"], "/auth/password-reset/confirm", "auth", PUBLIC),
-    ProxyRoute(["GET"], "/auth/verify-email", "auth", PUBLIC),
-    ProxyRoute(["GET"], "/auth/reset-password", "auth", PUBLIC),
     # -- users (identity lives in auth-service; sub-resources belong to
     #    whichever service owns them) -----------------------------------
     ProxyRoute(["GET"], "/users/{id}/parking-spots", "parking", PUBLIC),
