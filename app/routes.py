@@ -43,6 +43,10 @@ ROUTE_TABLE: list[ProxyRoute] = [
     #    whichever service owns them) -----------------------------------
     ProxyRoute(["GET"], "/users/{id}/parking-spots", "parking", PUBLIC),
     ProxyRoute(["GET"], "/users/{id}/bookings/history", "booking", REQUIRED),
+    ProxyRoute(["POST"], "/users/{id}/email/confirm", "auth", REQUIRED),
+    ProxyRoute(["POST"], "/users/{id}/email", "auth", REQUIRED),
+    ProxyRoute(["POST"], "/users/{id}/phone/confirm", "auth", REQUIRED),
+    ProxyRoute(["POST"], "/users/{id}/phone", "auth", REQUIRED),
     ProxyRoute(["GET"], "/users/{id}", "auth", REQUIRED),
     ProxyRoute(["PUT"], "/users/{id}", "auth", REQUIRED),
     ProxyRoute(["DELETE"], "/users/{id}", "auth", REQUIRED),
