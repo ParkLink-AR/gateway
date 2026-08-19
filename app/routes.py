@@ -63,6 +63,8 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["GET"], "/bookings/{id}", "booking", REQUIRED),
     ProxyRoute(["POST"], "/bookings", "booking", REQUIRED),
     # -- parking-service ------------------------------------------------
+    ProxyRoute(["GET"], "/geocode/reverse", "parking", PUBLIC),
+    ProxyRoute(["GET"], "/geocode", "parking", PUBLIC),
     ProxyRoute(["GET"], "/parking-spots/search", "parking", PUBLIC),
     ProxyRoute(["POST"], "/parking-spots", "parking", REQUIRED),
     ProxyRoute(["GET"], "/parking-spots/{id}/photos", "parking", PUBLIC),
