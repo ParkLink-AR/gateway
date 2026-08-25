@@ -75,14 +75,18 @@ def test_payment_webhook_is_public(client):
     assert forwarded.url.path == "/api/payments/webhook"
 
 
-def test_booking_owned_subresource_routes_to_booking_not_parking(client):
-    # /parking-spots/{id}/availability belongs to booking-service per its
-    # README, even though the prefix is /parking-spots. booking-service isn't
-    # configured in tests, so this must 503 rather than hit parking-service.
+def test_availability_subresource_routes_to_parking_not_booking(client):
+    # /parking-spots/{id}/availability belongs to parking-service -- it owns
+    # the spot's published schedule and calls booking-service itself for
+    # active bookings, rather than the gateway routing this to booking-service
+    # directly (that's how it used to work; booking-service dropped the
+    # endpoint once parking-service took over computing availability).
     response = client.get("/parking-spots/some-spot/availability")
 
-    assert response.status_code == 503
-    assert client._mock_calls == []
+    assert response.status_code == 200
+    forwarded = client._mock_calls[0]
+    assert forwarded.url.host == "parking-service.test"
+    assert forwarded.url.path == "/parking-spots/some-spot/availability"
 
 
 def test_parking_spot_detail_still_routes_to_parking(client):
