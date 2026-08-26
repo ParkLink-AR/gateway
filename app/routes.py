@@ -20,7 +20,7 @@ class ProxyRoute:
 
 
 # Order matters: more specific paths must come before catch-alls/overlapping
-# prefixes so Starlette matches the right one first (e.g. the booking-owned
+# prefixes so Starlette matches the right one first (e.g.
 # "/parking-spots/{id}/availability" has to be registered before parking's
 # generic "/parking-spots/{id}").
 ROUTE_TABLE: list[ProxyRoute] = [
@@ -55,7 +55,6 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["PUT"], "/users/{id}", "auth", REQUIRED),
     ProxyRoute(["DELETE"], "/users/{id}", "auth", REQUIRED),
     # -- booking-service (owns these /parking-spots/{id}/* sub-resources) --
-    ProxyRoute(["GET"], "/parking-spots/{id}/availability", "booking", PUBLIC),
     ProxyRoute(["GET"], "/parking-spots/{id}/bookings", "booking", REQUIRED),
     ProxyRoute(["GET"], "/parking-spots/{id}/reviews", "booking", PUBLIC),
     ProxyRoute(["POST"], "/bookings/{id}/confirm", "booking", REQUIRED),
@@ -68,6 +67,7 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["GET"], "/geocode", "parking", PUBLIC),
     ProxyRoute(["GET"], "/parking-spots/search", "parking", PUBLIC),
     ProxyRoute(["POST"], "/parking-spots", "parking", REQUIRED),
+    ProxyRoute(["GET"], "/parking-spots/{id}/availability", "parking", PUBLIC),
     ProxyRoute(["GET"], "/parking-spots/{id}/photos", "parking", PUBLIC),
     ProxyRoute(["POST"], "/parking-spots/{id}/photos", "parking", REQUIRED),
     ProxyRoute(["DELETE"], "/parking-spots/{id}/photos", "parking", REQUIRED),
