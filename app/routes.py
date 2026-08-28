@@ -80,7 +80,7 @@ ROUTE_TABLE: list[ProxyRoute] = [
     # -- payment-service (mounted at /api/payments/* downstream) --------
     ProxyRoute(["POST"], "/payments/create-preference", "payment", REQUIRED),
     ProxyRoute(["POST"], "/payments/webhook", "payment", PUBLIC),
-    ProxyRoute(["POST"], "/payments/verify-status", "payment", REQUIRED),
+    ProxyRoute(["POST"], "/payments/verify-status", "payment", PUBLIC),
     ProxyRoute(["GET"], "/payments/external-reference/{external_reference}", "payment", REQUIRED),
     ProxyRoute(["GET"], "/payments/{payment_id}", "payment", REQUIRED),
 ]
