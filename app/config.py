@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     AUTH_SERVICE_URL: str = "http://auth-service:8000"
     PARKING_SERVICE_URL: str = "http://parking-service:3001"
     PAYMENT_SERVICE_URL: str = "http://payment-service:8004"
-    BOOKING_SERVICE_URL: str = ""
+    BOOKING_SERVICE_URL: str = "http://booking-service:8080"
 
     # Must match the JWT_SECRET/JWT_ALGORITHM auth-service signs access tokens
     # with, so the gateway can verify them without calling auth-service.
