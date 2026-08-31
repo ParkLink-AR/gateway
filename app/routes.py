@@ -39,9 +39,6 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["POST"], "/auth/registration/phone/confirm", "auth", PUBLIC),
     ProxyRoute(["POST"], "/auth/password-reset/request", "auth", PUBLIC),
     ProxyRoute(["POST"], "/auth/password-reset/confirm", "auth", PUBLIC),
-    # Uploaded avatars, served back from auth-service's /static mount --
-    # public read, same as parking-spot photos below.
-    ProxyRoute(["GET"], "/static/{file_path:path}", "auth", PUBLIC),
     # -- users (identity lives in auth-service; sub-resources belong to
     #    whichever service owns them) -----------------------------------
     ProxyRoute(["GET"], "/users/{id}/parking-spots", "parking", PUBLIC),
@@ -71,6 +68,7 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["GET"], "/parking-spots/{id}/photos", "parking", PUBLIC),
     ProxyRoute(["POST"], "/parking-spots/{id}/photos", "parking", REQUIRED),
     ProxyRoute(["DELETE"], "/parking-spots/{id}/photos", "parking", REQUIRED),
+    ProxyRoute(["PUT"], "/parking-spots/{id}/photos/order", "parking", REQUIRED),
     ProxyRoute(["PATCH"], "/parking-spots/{id}/status", "parking", REQUIRED),
     ProxyRoute(["PUT"], "/parking-spots/{id}/pricing", "parking", REQUIRED),
     ProxyRoute(["PUT"], "/parking-spots/{id}/schedule", "parking", REQUIRED),
