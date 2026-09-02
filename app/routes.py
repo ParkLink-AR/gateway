@@ -78,7 +78,12 @@ ROUTE_TABLE: list[ProxyRoute] = [
     # -- payment-service (mounted at /api/payments/* downstream) --------
     ProxyRoute(["POST"], "/payments/create-preference", "payment", REQUIRED),
     ProxyRoute(["POST"], "/payments/webhook", "payment", PUBLIC),
-    ProxyRoute(["POST"], "/payments/verify-status", "payment", PUBLIC),
+    # REQUIRED, not PUBLIC: this looks up a payment (amount, payer email) by
+    # external_reference/paymentId with no ownership check on payment-service's
+    # side, so anyone with a reference could query someone else's payment.
+    # Mobile's request() always attaches the bearer token when there is one
+    # (see pending.tsx's polling loop), so this doesn't break that flow.
+    ProxyRoute(["POST"], "/payments/verify-status", "payment", REQUIRED),
     ProxyRoute(["GET"], "/payments/external-reference/{external_reference}", "payment", REQUIRED),
     ProxyRoute(["GET"], "/payments/{payment_id}", "payment", REQUIRED),
 ]
