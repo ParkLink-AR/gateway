@@ -19,6 +19,7 @@ def test_health_reports_service_configuration(client):
         "parking": True,
         "payment": True,
         "booking": False,
+        "notifications": True,
     }
     # RabbitMQ isn't reachable in the test environment; the gateway must
     # still boot and answer instead of crashing on a broker outage.
