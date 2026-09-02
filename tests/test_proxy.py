@@ -2,7 +2,7 @@ from tests.conftest import make_access_token
 
 
 def test_public_route_forwards_without_auth(client):
-    calls, script, _ = client._mock_calls, client._mock_script, None
+    calls = client._mock_calls
     response = client.get("/parking-spots/search?lat=1&lng=2")
 
     assert response.status_code == 200
