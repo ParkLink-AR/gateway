@@ -39,6 +39,7 @@ SERVICE_BASE_URL_ATTR = {
     "parking": "PARKING_SERVICE_URL",
     "payment": "PAYMENT_SERVICE_URL",
     "booking": "BOOKING_SERVICE_URL",
+    "notifications": "NOTIFICATIONS_SERVICE_URL",
 }
 
 

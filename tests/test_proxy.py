@@ -96,3 +96,39 @@ def test_parking_spot_detail_still_routes_to_parking(client):
     forwarded = client._mock_calls[0]
     assert forwarded.url.host == "parking-service.test"
     assert forwarded.url.path == "/parking-spots/some-spot"
+
+
+def test_notifications_token_register_requires_auth_and_forwards(client):
+    token = make_access_token(user_id="33333333-3333-3333-3333-333333333333")
+    response = client.put(
+        "/notifications/tokens",
+        json={"token": "fcm-abc", "platform": "android"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    forwarded = client._mock_calls[0]
+    assert forwarded.url.host == "notifications-service.test"
+    assert forwarded.url.path == "/notifications/tokens"
+    assert forwarded.headers["x-user-id"] == "33333333-3333-3333-3333-333333333333"
+
+
+def test_notifications_token_register_without_token_is_rejected(client):
+    response = client.put(
+        "/notifications/tokens", json={"token": "fcm-abc", "platform": "android"}
+    )
+
+    assert response.status_code == 401
+    assert client._mock_calls == []
+
+
+def test_notifications_token_delete_routes_with_path_param(client):
+    response = client.delete(
+        "/notifications/tokens/fcm-abc",
+        headers={"Authorization": f"Bearer {make_access_token()}"},
+    )
+
+    assert response.status_code == 200
+    forwarded = client._mock_calls[0]
+    assert forwarded.url.host == "notifications-service.test"
+    assert forwarded.url.path == "/notifications/tokens/fcm-abc"

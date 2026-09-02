@@ -84,6 +84,11 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["POST"], "/payments/verify-status", "payment", PUBLIC),
     ProxyRoute(["GET"], "/payments/external-reference/{external_reference}", "payment", REQUIRED),
     ProxyRoute(["GET"], "/payments/{payment_id}", "payment", REQUIRED),
+    # -- notifications-service ----------------------------------------
+    # Only the device-token registry is exposed; domain notifications flow
+    # over RabbitMQ, not HTTP, so the client never proxies anything else here.
+    ProxyRoute(["DELETE"], "/notifications/tokens/{token}", "notifications", REQUIRED),
+    ProxyRoute(["PUT"], "/notifications/tokens", "notifications", REQUIRED),
 ]
 
 

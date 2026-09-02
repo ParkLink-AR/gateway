@@ -5,6 +5,7 @@ os.environ["JWT_ALGORITHM"] = "HS256"
 os.environ["AUTH_SERVICE_URL"] = "http://auth-service.test"
 os.environ["PARKING_SERVICE_URL"] = "http://parking-service.test"
 os.environ["PAYMENT_SERVICE_URL"] = "http://payment-service.test"
+os.environ["NOTIFICATIONS_SERVICE_URL"] = "http://notifications-service.test"
 os.environ["BOOKING_SERVICE_URL"] = ""  # left unconfigured on purpose
 os.environ["RABBITMQ_URL"] = "amqp://guest:guest@127.0.0.1:1/"  # unreachable on purpose
 
