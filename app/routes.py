@@ -52,9 +52,12 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["PUT"], "/users/{id}", "auth", REQUIRED),
     ProxyRoute(["DELETE"], "/users/{id}", "auth", REQUIRED),
     # -- booking-service (owns these /parking-spots/{id}/* sub-resources) --
+    ProxyRoute(["GET"], "/parking-spots/{id}/bookings/detailed", "booking", REQUIRED),
     ProxyRoute(["GET"], "/parking-spots/{id}/bookings", "booking", REQUIRED),
     ProxyRoute(["GET"], "/parking-spots/{id}/reviews", "booking", PUBLIC),
     ProxyRoute(["POST"], "/bookings/{id}/confirm", "booking", REQUIRED),
+    ProxyRoute(["POST"], "/bookings/{id}/approve", "booking", REQUIRED),
+    ProxyRoute(["POST"], "/bookings/{id}/reject", "booking", REQUIRED),
     ProxyRoute(["POST"], "/bookings/{id}/reviews", "booking", REQUIRED),
     ProxyRoute(["POST"], "/bookings/{id}/cancel", "booking", REQUIRED),
     ProxyRoute(["GET"], "/bookings/{id}", "booking", REQUIRED),
