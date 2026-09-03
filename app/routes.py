@@ -43,11 +43,13 @@ ROUTE_TABLE: list[ProxyRoute] = [
     #    whichever service owns them) -----------------------------------
     ProxyRoute(["GET"], "/users/{id}/parking-spots", "parking", PUBLIC),
     ProxyRoute(["GET"], "/users/{id}/bookings/history", "booking", REQUIRED),
+    ProxyRoute(["GET"], "/users/{id}/reviews", "booking", REQUIRED),
     ProxyRoute(["POST"], "/users/{id}/avatar", "auth", REQUIRED),
     ProxyRoute(["POST"], "/users/{id}/email/confirm", "auth", REQUIRED),
     ProxyRoute(["POST"], "/users/{id}/email", "auth", REQUIRED),
     ProxyRoute(["POST"], "/users/{id}/phone/confirm", "auth", REQUIRED),
     ProxyRoute(["POST"], "/users/{id}/phone", "auth", REQUIRED),
+    ProxyRoute(["GET"], "/users/{id}/public-profile", "auth", REQUIRED),
     ProxyRoute(["GET"], "/users/{id}", "auth", REQUIRED),
     ProxyRoute(["PUT"], "/users/{id}", "auth", REQUIRED),
     ProxyRoute(["DELETE"], "/users/{id}", "auth", REQUIRED),
@@ -60,6 +62,7 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["POST"], "/bookings/{id}/reject", "booking", REQUIRED),
     ProxyRoute(["POST"], "/bookings/{id}/reviews", "booking", REQUIRED),
     ProxyRoute(["POST"], "/bookings/{id}/cancel", "booking", REQUIRED),
+    ProxyRoute(["GET"], "/bookings/{id}/reviews", "booking", REQUIRED),
     ProxyRoute(["GET"], "/bookings/{id}", "booking", REQUIRED),
     ProxyRoute(["POST"], "/bookings", "booking", REQUIRED),
     # -- parking-service ------------------------------------------------
