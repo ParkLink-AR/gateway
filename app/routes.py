@@ -75,6 +75,10 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["GET"], "/parking-spots/{id}", "parking", PUBLIC),
     ProxyRoute(["PUT"], "/parking-spots/{id}", "parking", REQUIRED),
     ProxyRoute(["DELETE"], "/parking-spots/{id}", "parking", REQUIRED),
+    ProxyRoute(["GET"], "/favorites/ids", "parking", REQUIRED),
+    ProxyRoute(["GET"], "/favorites", "parking", REQUIRED),
+    ProxyRoute(["POST"], "/favorites", "parking", REQUIRED),
+    ProxyRoute(["DELETE"], "/favorites/{parking_spot_id}", "parking", REQUIRED),
     # -- payment-service (mounted at /api/payments/* downstream) --------
     ProxyRoute(["POST"], "/payments/create-preference", "payment", REQUIRED),
     ProxyRoute(["POST"], "/payments/webhook", "payment", PUBLIC),
