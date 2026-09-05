@@ -62,6 +62,10 @@ def _forward_request_headers(request: Request, user_id: str | None) -> dict[str,
     # Strip any incoming untrusted client-supplied identity/internal headers to prevent spoofing
     headers.pop("x-user-id", None)
     headers.pop("x-internal-key", None)
+    headers.pop("x-gateway-secret", None)
+    # Inject legitimate gateway authentication header
+    if settings.GATEWAY_INTERNAL_SECRET:
+        headers["x-gateway-secret"] = settings.GATEWAY_INTERNAL_SECRET
     if user_id is not None:
         # Downstream services can trust this instead of re-verifying the JWT
         # themselves (see parking-service's TODO about ownerId coming "from

@@ -20,7 +20,11 @@ class Settings(BaseSettings):
     # Must match the JWT_SECRET/JWT_ALGORITHM auth-service signs access tokens
     # with, so the gateway can verify them without calling auth-service.
     JWT_SECRET: str = "dev-secret-change-me"
+    JWT_PUBLIC_KEY: str = ""
     JWT_ALGORITHM: str = "HS256"
+
+    # Shared key to authenticate gateway-originating calls to downstream services
+    GATEWAY_INTERNAL_SECRET: str = "dev-gateway-secret-change-me"
 
     RABBITMQ_URL: str = "amqp://guest:guest@rabbitmq:5672/"
     EVENTS_EXCHANGE: str = "parklink.events"
