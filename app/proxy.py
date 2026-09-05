@@ -59,6 +59,9 @@ def _forward_request_headers(request: Request, user_id: str | None) -> dict[str,
     headers = {k: v for k, v in request.headers.items() if k.lower() not in HOP_BY_HOP_HEADERS}
     request_id = request.headers.get("x-request-id") or uuid.uuid4().hex
     headers["x-request-id"] = request_id
+    # Strip any incoming untrusted client-supplied identity/internal headers to prevent spoofing
+    headers.pop("x-user-id", None)
+    headers.pop("x-internal-key", None)
     if user_id is not None:
         # Downstream services can trust this instead of re-verifying the JWT
         # themselves (see parking-service's TODO about ownerId coming "from

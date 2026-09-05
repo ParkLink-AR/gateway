@@ -7,7 +7,7 @@ from loguru import logger
 
 from app.config import settings
 from app.logger import setup_logger
-from app.middleware import AccessLogMiddleware
+from app.middleware import AccessLogMiddleware, RateLimitMiddleware, SecurityHeadersMiddleware
 from app.proxy import SERVICE_BASE_URL_ATTR
 from app.rabbitmq import rabbitmq_client
 from app.routes import register_routes
@@ -28,6 +28,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="ParkLink Gateway", version="1.0.0", lifespan=lifespan)
 
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RateLimitMiddleware)
 app.add_middleware(AccessLogMiddleware)
 app.add_middleware(
     CORSMiddleware,
