@@ -11,11 +11,18 @@ from app.problem_json import problem_response
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """In-memory rate limiter using sliding window per IP to defend against brute-force and DoS."""
 
+    # How often to sweep requests_map for stale keys (clients that stopped
+    # sending requests), so memory doesn't grow forever with one-off/spoofed
+    # IPs. Anything not touched in this long is expired for every window we
+    # track (the largest configured window is 60s), so it's safe to drop.
+    SWEEP_INTERVAL_SECONDS = 300
+
     def __init__(self, app, default_limit: int = 120, default_window: int = 60):
         super().__init__(app)
         self.default_limit = default_limit
         self.default_window = default_window
         self.requests_map: dict[str, list[float]] = defaultdict(list)
+        self._last_sweep = time.time()
         # Sensitive routes with strict limits: (max_requests, window_seconds)
         self.sensitive_routes = {
             "/auth/login": (10, 60),
@@ -28,15 +35,34 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         }
 
     def _get_client_ip(self, request: Request) -> str:
+        # Render (our only reverse proxy in front of the gateway) appends its
+        # own resolved address to X-Forwarded-For rather than replacing it, so
+        # the FIRST entry is whatever the client sent and can't be trusted --
+        # a client can put anything there to dodge the limit. The LAST entry
+        # is the one Render itself added, which the client can't forge.
         forwarded = request.headers.get("x-forwarded-for")
         if forwarded:
-            return forwarded.split(",")[0].strip()
+            return forwarded.split(",")[-1].strip()
         return request.client.host if request.client else "unknown"
+
+    def _sweep_stale_entries(self, now: float) -> None:
+        if now - self._last_sweep < self.SWEEP_INTERVAL_SECONDS:
+            return
+        self._last_sweep = now
+        max_window = max([self.default_window, *(w for _, w in self.sensitive_routes.values())])
+        stale_keys = [
+            key for key, timestamps in self.requests_map.items()
+            if not timestamps or now - timestamps[-1] > max_window
+        ]
+        for key in stale_keys:
+            del self.requests_map[key]
 
     async def dispatch(self, request: Request, call_next):
         client_ip = self._get_client_ip(request)
         now = time.time()
         path = request.url.path
+
+        self._sweep_stale_entries(now)
 
         max_req, window = self.sensitive_routes.get(
             path, (self.default_limit, self.default_window)

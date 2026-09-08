@@ -20,7 +20,6 @@ class Settings(BaseSettings):
     # Must match the JWT_SECRET/JWT_ALGORITHM auth-service signs access tokens
     # with, so the gateway can verify them without calling auth-service.
     JWT_SECRET: str = "dev-secret-change-me"
-    JWT_PUBLIC_KEY: str = ""
     JWT_ALGORITHM: str = "HS256"
 
     # Shared key to authenticate gateway-originating calls to downstream services
@@ -41,6 +40,11 @@ class Settings(BaseSettings):
             if len(self.JWT_SECRET) < 32 or any(s in val for s in INSECURE_SECRET_SUBSTRINGS):
                 raise ValueError(
                     "FATAL: Insecure or default JWT_SECRET configured in production environment."
+                )
+            gateway_secret = self.GATEWAY_INTERNAL_SECRET.lower()
+            if len(self.GATEWAY_INTERNAL_SECRET) < 32 or any(s in gateway_secret for s in INSECURE_SECRET_SUBSTRINGS):
+                raise ValueError(
+                    "FATAL: Insecure or default GATEWAY_INTERNAL_SECRET configured in production environment."
                 )
         return self
 

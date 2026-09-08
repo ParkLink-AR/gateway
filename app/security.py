@@ -25,9 +25,8 @@ def decode_access_token(token: str) -> dict:
     revocation, suspended/deleted users, etc. auth-service remains the source
     of truth for those and still re-validates on its own protected routes.
     """
-    verification_key = settings.JWT_PUBLIC_KEY if settings.JWT_PUBLIC_KEY else settings.JWT_SECRET
     try:
-        payload = jwt.decode(token, verification_key, algorithms=[settings.JWT_ALGORITHM])
+        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
     except JWTError as exc:
         raise InvalidTokenError(str(exc)) from exc
 
