@@ -71,6 +71,11 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["GET"], "/parking-spots/search", "parking", PUBLIC),
     ProxyRoute(["POST"], "/parking-spots", "parking", REQUIRED),
     ProxyRoute(["GET"], "/parking-spots/{id}/availability", "parking", PUBLIC),
+    # "Estadía" (day/week/month rental): a read-only quote, same auth level as
+    # .../availability above -- it prices and validates a stay but doesn't book
+    # anything. Also called directly (bypassing this gateway) by booking-service
+    # when it actually creates a STAY booking, to confirm the amount server-side.
+    ProxyRoute(["GET"], "/parking-spots/{id}/stays/quote", "parking", PUBLIC),
     ProxyRoute(["GET"], "/parking-spots/{id}/photos", "parking", PUBLIC),
     ProxyRoute(["POST"], "/parking-spots/{id}/photos", "parking", REQUIRED),
     ProxyRoute(["DELETE"], "/parking-spots/{id}/photos", "parking", REQUIRED),
