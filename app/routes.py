@@ -76,6 +76,9 @@ ROUTE_TABLE: list[ProxyRoute] = [
     # anything. Also called directly (bypassing this gateway) by booking-service
     # when it actually creates a STAY booking, to confirm the amount server-side.
     ProxyRoute(["GET"], "/parking-spots/{id}/stays/quote", "parking", PUBLIC),
+    # Calendario de disponibilidad para elegir fecha de inicio de estadía --
+    # mismo nivel de auth que .../stays/quote y .../availability, sólo lectura.
+    ProxyRoute(["GET"], "/parking-spots/{id}/stays/availability", "parking", PUBLIC),
     ProxyRoute(["GET"], "/parking-spots/{id}/photos", "parking", PUBLIC),
     ProxyRoute(["POST"], "/parking-spots/{id}/photos", "parking", REQUIRED),
     ProxyRoute(["DELETE"], "/parking-spots/{id}/photos", "parking", REQUIRED),
