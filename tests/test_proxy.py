@@ -98,6 +98,21 @@ def test_parking_spot_detail_still_routes_to_parking(client):
     assert forwarded.url.path == "/parking-spots/some-spot"
 
 
+def test_parking_spots_batch_route_forwards_without_auth(client):
+    calls = client._mock_calls
+    response = client.get("/parking-spots?ids=11111111-1111-1111-1111-111111111111,22222222-2222-2222-2222-222222222222")
+
+    assert response.status_code == 200
+    assert len(calls) == 1
+    forwarded = calls[0]
+    assert forwarded.url.host == "parking-service.test"
+    assert forwarded.url.path == "/parking-spots"
+    assert dict(forwarded.url.params) == {
+        "ids": "11111111-1111-1111-1111-111111111111,22222222-2222-2222-2222-222222222222"
+    }
+    assert "x-user-id" not in forwarded.headers
+
+
 def test_notifications_token_register_requires_auth_and_forwards(client):
     token = make_access_token(user_id="33333333-3333-3333-3333-333333333333")
     response = client.put(

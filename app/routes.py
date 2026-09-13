@@ -69,6 +69,10 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["GET"], "/geocode/reverse", "parking", PUBLIC),
     ProxyRoute(["GET"], "/geocode", "parking", PUBLIC),
     ProxyRoute(["GET"], "/parking-spots/search", "parking", PUBLIC),
+    # Batch detail lookup (?ids=a,b,c) -- same auth level as the single-spot
+    # GET /parking-spots/{id} below, since it returns the same public data,
+    # just for several spots in one request instead of one per id.
+    ProxyRoute(["GET"], "/parking-spots", "parking", PUBLIC),
     ProxyRoute(["POST"], "/parking-spots", "parking", REQUIRED),
     ProxyRoute(["GET"], "/parking-spots/{id}/availability", "parking", PUBLIC),
     # "Estadía" (day/week/month rental): a read-only quote, same auth level as
