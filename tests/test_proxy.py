@@ -113,6 +113,31 @@ def test_parking_spots_batch_route_forwards_without_auth(client):
     assert "x-user-id" not in forwarded.headers
 
 
+def test_bookings_verify_code_requires_auth_then_hits_unconfigured_booking_service(client):
+    # booking-service has no mock host in this suite (BOOKING_SERVICE_URL is left
+    # unconfigured on purpose, see conftest.py and test_unconfigured_service_returns_503_
+    # without_calling_out above) -- so the strongest assertion available here is that a
+    # valid token gets *past* auth for this route (503, not 401) with no upstream call
+    # made, same as every other booking-service route in this suite.
+    token = make_access_token(user_id="55555555-5555-5555-5555-555555555555")
+
+    response = client.post(
+        "/bookings/some-booking-id/verify-code",
+        json={"code": "9542"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 503
+    assert client._mock_calls == []
+
+
+def test_bookings_verify_code_without_token_is_rejected(client):
+    response = client.post("/bookings/some-booking-id/verify-code", json={"code": "9542"})
+
+    assert response.status_code == 401
+    assert client._mock_calls == []
+
+
 def test_notifications_token_register_requires_auth_and_forwards(client):
     token = make_access_token(user_id="33333333-3333-3333-3333-333333333333")
     response = client.put(
