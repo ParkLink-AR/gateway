@@ -75,6 +75,14 @@ def test_payment_webhook_is_public(client):
     assert forwarded.url.path == "/api/payments/webhook"
 
 
+def test_payment_redirect_is_public(client):
+    response = client.get("/payments/redirect?status=approved")
+
+    assert response.status_code == 200
+    forwarded = client._mock_calls[0]
+    assert forwarded.url.path == "/api/payments/redirect"
+
+
 def test_availability_subresource_routes_to_parking_not_booking(client):
     # /parking-spots/{id}/availability belongs to parking-service -- it owns
     # the spot's published schedule and calls booking-service itself for

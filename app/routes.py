@@ -102,6 +102,7 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["GET"], "/payments/metrics", "payment", REQUIRED),
     ProxyRoute(["POST"], "/payments/create-preference", "payment", REQUIRED),
     ProxyRoute(["POST"], "/payments/webhook", "payment", PUBLIC),
+    ProxyRoute(["GET"], "/payments/redirect", "payment", PUBLIC),
     # REQUIRED, not PUBLIC: this looks up a payment (amount, payer email) by
     # external_reference/paymentId with no ownership check on payment-service's
     # side, so anyone with a reference could query someone else's payment.
