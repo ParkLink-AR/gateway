@@ -170,6 +170,34 @@ def test_notifications_token_register_without_token_is_rejected(client):
     assert client._mock_calls == []
 
 
+def test_admin_tickets_route_without_token_is_rejected(client):
+    response = client.get("/admin/tickets")
+
+    assert response.status_code == 401
+    assert client._mock_calls == []
+
+
+def test_admin_tickets_route_with_non_admin_token_is_forbidden(client):
+    token = make_access_token(user_id="66666666-6666-6666-6666-666666666666")
+
+    response = client.get("/admin/tickets", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 403
+    assert client._mock_calls == []
+
+
+def test_admin_tickets_route_with_admin_token_hits_unconfigured_booking_service(client):
+    # Same reasoning as test_bookings_verify_code_requires_auth_then_hits_unconfigured_
+    # booking_service above: booking-service has no mock host in this suite, so the
+    # strongest assertion is that an admin token gets *past* auth (503, not 401/403).
+    token = make_access_token(user_id="admin-1", role="admin")
+
+    response = client.get("/admin/tickets", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 503
+    assert client._mock_calls == []
+
+
 def test_notifications_token_delete_routes_with_path_param(client):
     response = client.delete(
         "/notifications/tokens/fcm-abc",
