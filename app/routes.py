@@ -9,6 +9,7 @@ from app.proxy import AuthMode, make_proxy_handler
 
 PUBLIC = AuthMode.PUBLIC
 REQUIRED = AuthMode.REQUIRED
+ADMIN = AuthMode.ADMIN
 
 
 @dataclass(frozen=True)
@@ -66,8 +67,23 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["POST"], "/bookings/{id}/messages", "booking", REQUIRED),
     ProxyRoute(["GET"], "/bookings/{id}/reviews", "booking", REQUIRED),
     ProxyRoute(["GET"], "/bookings/{id}/messages", "booking", REQUIRED),
+    ProxyRoute(["POST"], "/bookings/{id}/tickets", "booking", REQUIRED),
+    ProxyRoute(["GET"], "/bookings/{id}/tickets", "booking", REQUIRED),
     ProxyRoute(["GET"], "/bookings/{id}", "booking", REQUIRED),
     ProxyRoute(["POST"], "/bookings", "booking", REQUIRED),
+    # A booking-scoped support ticket, once opened, is addressed by its own id
+    # rather than nested under /bookings/{id} -- same shape as /tickets/{id}/*.
+    ProxyRoute(["GET"], "/tickets/{id}/messages", "booking", REQUIRED),
+    ProxyRoute(["POST"], "/tickets/{id}/messages", "booking", REQUIRED),
+    ProxyRoute(["GET"], "/tickets/{id}", "booking", REQUIRED),
+    # -- support tickets, ParkLink-staff side (admin-dashboard) -- ADMIN, not
+    # REQUIRED: only a token with role:"admin" may reach these (see
+    # app.security.authenticate_admin). --------------------------------
+    ProxyRoute(["GET"], "/admin/tickets/{id}/messages", "booking", ADMIN),
+    ProxyRoute(["POST"], "/admin/tickets/{id}/messages", "booking", ADMIN),
+    ProxyRoute(["PATCH"], "/admin/tickets/{id}/status", "booking", ADMIN),
+    ProxyRoute(["GET"], "/admin/tickets/{id}", "booking", ADMIN),
+    ProxyRoute(["GET"], "/admin/tickets", "booking", ADMIN),
     # -- parking-service ------------------------------------------------
     ProxyRoute(["GET"], "/geocode/reverse", "parking", PUBLIC),
     ProxyRoute(["GET"], "/geocode", "parking", PUBLIC),

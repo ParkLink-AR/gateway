@@ -4,7 +4,7 @@ import pytest
 from jose import jwt
 
 from app.config import settings
-from app.security import InvalidTokenError, authenticate, decode_access_token
+from app.security import InvalidTokenError, NotAdminError, authenticate, authenticate_admin, decode_access_token
 from tests.conftest import make_access_token
 
 
@@ -54,3 +54,25 @@ def test_authenticate_rejects_non_access_token():
     )
     with pytest.raises(InvalidTokenError):
         decode_access_token(refresh_like)
+
+
+def test_authenticate_admin_accepts_token_with_admin_role():
+    token = make_access_token(user_id="admin-1", role="admin")
+    assert authenticate_admin(f"Bearer {token}") == "admin-1"
+
+
+def test_authenticate_admin_rejects_token_without_admin_role():
+    token = make_access_token(user_id="abc-123")
+    with pytest.raises(NotAdminError):
+        authenticate_admin(f"Bearer {token}")
+
+
+def test_authenticate_admin_rejects_token_with_other_role():
+    token = make_access_token(user_id="abc-123", role="driver")
+    with pytest.raises(NotAdminError):
+        authenticate_admin(f"Bearer {token}")
+
+
+def test_authenticate_admin_rejects_missing_header():
+    with pytest.raises(InvalidTokenError):
+        authenticate_admin(None)

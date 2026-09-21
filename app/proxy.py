@@ -10,7 +10,7 @@ from loguru import logger
 
 from app.config import settings
 from app.problem_json import problem_response
-from app.security import InvalidTokenError, authenticate
+from app.security import InvalidTokenError, NotAdminError, authenticate, authenticate_admin
 
 # Headers that are per-hop or get recomputed by httpx/the ASGI server; forwarding
 # them verbatim (in either direction) would corrupt the proxied response.
@@ -31,6 +31,9 @@ HOP_BY_HOP_HEADERS = {
 class AuthMode(str, Enum):
     PUBLIC = "public"
     REQUIRED = "required"
+    # Same as REQUIRED, plus the token's role claim must be "admin" -- see
+    # app.security.authenticate_admin for how that's minted/checked.
+    ADMIN = "admin"
 
 
 # service key -> settings attribute holding its base URL
@@ -88,6 +91,13 @@ def make_proxy_handler(service: str, auth_mode: AuthMode) -> Callable:
                 user_id = authenticate(request.headers.get("authorization"))
             except InvalidTokenError as exc:
                 return problem_response(request, 401, "Unauthorized", str(exc))
+        elif auth_mode is AuthMode.ADMIN:
+            try:
+                user_id = authenticate_admin(request.headers.get("authorization"))
+            except InvalidTokenError as exc:
+                return problem_response(request, 401, "Unauthorized", str(exc))
+            except NotAdminError as exc:
+                return problem_response(request, 403, "Forbidden", str(exc))
 
         base_url = _service_base_url(service)
         if not base_url:
