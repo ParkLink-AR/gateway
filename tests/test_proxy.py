@@ -357,6 +357,28 @@ def test_admin_accounts_route_with_admin_token_forwards(client):
     assert forwarded.headers["x-user-id"] == "admin-1"
 
 
+def test_admin_route_forwards_admin_role_header_when_present(client):
+    # Lets a service that doesn't own admin_accounts (e.g. booking-service's commission
+    # settings) gate a SUPERADMIN-only action without calling back into auth-service.
+    token = make_access_token(user_id="admin-1", role="admin", admin_role="SUPERADMIN")
+
+    response = client.get("/admin/accounts", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 200
+    forwarded = client._mock_calls[0]
+    assert forwarded.headers["x-admin-role"] == "SUPERADMIN"
+
+
+def test_admin_route_omits_admin_role_header_when_token_lacks_it(client):
+    token = make_access_token(user_id="admin-1", role="admin")
+
+    response = client.get("/admin/accounts", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 200
+    forwarded = client._mock_calls[0]
+    assert "x-admin-role" not in forwarded.headers
+
+
 def test_admin_accounts_create_route_with_non_admin_token_is_forbidden(client):
     token = make_access_token(user_id="66666666-6666-6666-6666-666666666666")
 

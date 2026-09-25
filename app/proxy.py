@@ -58,12 +58,13 @@ def _downstream_path(service: str, gateway_path: str) -> str:
     return gateway_path
 
 
-def _forward_request_headers(request: Request, user_id: str | None) -> dict[str, str]:
+def _forward_request_headers(request: Request, user_id: str | None, admin_role: str | None = None) -> dict[str, str]:
     headers = {k: v for k, v in request.headers.items() if k.lower() not in HOP_BY_HOP_HEADERS}
     request_id = request.headers.get("x-request-id") or uuid.uuid4().hex
     headers["x-request-id"] = request_id
     # Strip any incoming untrusted client-supplied identity/internal headers to prevent spoofing
     headers.pop("x-user-id", None)
+    headers.pop("x-admin-role", None)
     headers.pop("x-internal-key", None)
     headers.pop("x-gateway-secret", None)
     # Inject legitimate gateway authentication header
@@ -76,6 +77,11 @@ def _forward_request_headers(request: Request, user_id: str | None) -> dict[str,
         # middleware, now living at the gateway). The original Authorization
         # header is still forwarded as-is for services that want to check it.
         headers["x-user-id"] = user_id
+    if admin_role is not None:
+        # ADMIN-mode routes only -- lets a service that doesn't own the admin_accounts
+        # table (e.g. booking-service's commission settings) gate a SUPERADMIN-only
+        # action on this instead of calling back into auth-service to look it up.
+        headers["x-admin-role"] = admin_role
     return headers
 
 
@@ -86,6 +92,7 @@ def _forward_response_headers(response: httpx.Response) -> dict[str, str]:
 def make_proxy_handler(service: str, auth_mode: AuthMode) -> Callable:
     async def handler(request: Request) -> Response:
         user_id: str | None = None
+        admin_role: str | None = None
         if auth_mode is AuthMode.REQUIRED:
             try:
                 user_id = authenticate(request.headers.get("authorization"))
@@ -93,7 +100,7 @@ def make_proxy_handler(service: str, auth_mode: AuthMode) -> Callable:
                 return problem_response(request, 401, "Unauthorized", str(exc))
         elif auth_mode is AuthMode.ADMIN:
             try:
-                user_id = authenticate_admin(request.headers.get("authorization"))
+                user_id, admin_role = authenticate_admin(request.headers.get("authorization"))
             except InvalidTokenError as exc:
                 return problem_response(request, 401, "Unauthorized", str(exc))
             except NotAdminError as exc:
@@ -119,7 +126,7 @@ def make_proxy_handler(service: str, auth_mode: AuthMode) -> Callable:
                 url,
                 params=request.query_params,
                 content=body,
-                headers=_forward_request_headers(request, user_id),
+                headers=_forward_request_headers(request, user_id, admin_role),
             )
         except httpx.TimeoutException:
             logger.warning(f"[PROXY] Timeout forwarding {request.method} {url}")

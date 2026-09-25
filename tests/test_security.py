@@ -58,7 +58,12 @@ def test_authenticate_rejects_non_access_token():
 
 def test_authenticate_admin_accepts_token_with_admin_role():
     token = make_access_token(user_id="admin-1", role="admin")
-    assert authenticate_admin(f"Bearer {token}") == "admin-1"
+    assert authenticate_admin(f"Bearer {token}") == ("admin-1", None)
+
+
+def test_authenticate_admin_returns_admin_role_claim():
+    token = make_access_token(user_id="admin-1", role="admin", admin_role="SUPERADMIN")
+    assert authenticate_admin(f"Bearer {token}") == ("admin-1", "SUPERADMIN")
 
 
 def test_authenticate_admin_rejects_token_without_admin_role():

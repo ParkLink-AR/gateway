@@ -128,6 +128,7 @@ ROUTE_TABLE: list[ProxyRoute] = [
     # wherever an endpoint needs more than the gateway's binary ADMIN gate.
     ProxyRoute(["POST"], "/admin/accounts", "auth", ADMIN),
     ProxyRoute(["GET"], "/admin/accounts", "auth", ADMIN),
+    ProxyRoute(["POST"], "/admin/accounts/{id}/password", "auth", ADMIN),
     ProxyRoute(["PATCH"], "/admin/accounts/{id}", "auth", ADMIN),
     # -- parking-service ------------------------------------------------
     ProxyRoute(["GET"], "/geocode/reverse", "parking", PUBLIC),
