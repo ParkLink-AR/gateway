@@ -51,6 +51,14 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["POST"], "/users/{id}/phone/confirm", "auth", REQUIRED),
     ProxyRoute(["POST"], "/users/{id}/phone", "auth", REQUIRED),
     ProxyRoute(["GET"], "/users/{id}/public-profile", "auth", REQUIRED),
+    # Owner payout bank details -- self-service, same reasoning as email/phone/
+    # avatar above: a user managing their own sub-resource. (There's also an
+    # internal auth-service endpoint, /internal/users/{id}/payout-status, used
+    # service-to-service by parking-service; it deliberately has no gateway
+    # route and bypasses this proxy entirely, same convention as other
+    # internal-only endpoints in this codebase.)
+    ProxyRoute(["GET"], "/users/{id}/payout-info", "auth", REQUIRED),
+    ProxyRoute(["PUT"], "/users/{id}/payout-info", "auth", REQUIRED),
     ProxyRoute(["GET"], "/users/{id}", "auth", REQUIRED),
     ProxyRoute(["PUT"], "/users/{id}", "auth", REQUIRED),
     ProxyRoute(["DELETE"], "/users/{id}", "auth", REQUIRED),
@@ -84,6 +92,29 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["PATCH"], "/admin/tickets/{id}/status", "booking", ADMIN),
     ProxyRoute(["GET"], "/admin/tickets/{id}", "booking", ADMIN),
     ProxyRoute(["GET"], "/admin/tickets", "booking", ADMIN),
+    # -- owner payouts/settlements queue, ParkLink-staff side -- same ADMIN
+    # reasoning as the support tickets block above. mark-paid (a sub-action on
+    # a specific payout) is registered before the bare /admin/payouts/{id},
+    # which in turn comes before the /admin/payouts list, mirroring the
+    # tickets/{id}/messages -> tickets/{id} -> tickets ordering above. Note
+    # mark-paid accepts multipart/form-data (optional receipt upload); the
+    # proxy forwards the raw body and headers as-is, so that passes through
+    # untouched, same as any other content-type on this route table.
+    ProxyRoute(["POST"], "/admin/payouts/{id}/mark-paid", "booking", ADMIN),
+    ProxyRoute(["GET"], "/admin/payouts/{id}", "booking", ADMIN),
+    ProxyRoute(["GET"], "/admin/payouts", "booking", ADMIN),
+    # Aggregate view of everything an owner has received across all their
+    # spots -- distinct prefix from /admin/payouts above, no ordering conflict.
+    ProxyRoute(["GET"], "/admin/owners/{id}/bookings", "booking", ADMIN),
+    # Admin-configurable commission rate used when computing payouts.
+    ProxyRoute(["GET"], "/admin/settings/commission", "booking", ADMIN),
+    ProxyRoute(["PUT"], "/admin/settings/commission", "booking", ADMIN),
+    # -- auth-service, ParkLink-staff side (admin-dashboard) -- ADMIN, not
+    # REQUIRED, same reasoning as the /admin/tickets/* block above: staff
+    # searching/viewing user accounts to administer payouts. {id}-specific
+    # route registered before the bare list, same convention as elsewhere.
+    ProxyRoute(["GET"], "/admin/users/{id}", "auth", ADMIN),
+    ProxyRoute(["GET"], "/admin/users", "auth", ADMIN),
     # -- parking-service ------------------------------------------------
     ProxyRoute(["GET"], "/geocode/reverse", "parking", PUBLIC),
     ProxyRoute(["GET"], "/geocode", "parking", PUBLIC),

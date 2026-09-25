@@ -208,3 +208,107 @@ def test_notifications_token_delete_routes_with_path_param(client):
     forwarded = client._mock_calls[0]
     assert forwarded.url.host == "notifications-service.test"
     assert forwarded.url.path == "/notifications/tokens/fcm-abc"
+
+
+def test_payout_info_route_without_token_is_rejected(client):
+    response = client.get("/users/11111111-1111-1111-1111-111111111111/payout-info")
+
+    assert response.status_code == 401
+    assert client._mock_calls == []
+
+
+def test_payout_info_route_with_valid_token_forwards_and_injects_user_id(client):
+    user_id = "22222222-2222-2222-2222-222222222222"
+    token = make_access_token(user_id=user_id)
+
+    response = client.get(
+        f"/users/{user_id}/payout-info",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    forwarded = client._mock_calls[0]
+    assert forwarded.url.host == "auth-service.test"
+    assert forwarded.url.path == f"/users/{user_id}/payout-info"
+    assert forwarded.headers["x-user-id"] == user_id
+
+
+def test_admin_payouts_route_without_token_is_rejected(client):
+    response = client.get("/admin/payouts")
+
+    assert response.status_code == 401
+    assert client._mock_calls == []
+
+
+def test_admin_payouts_route_with_non_admin_token_is_forbidden(client):
+    token = make_access_token(user_id="66666666-6666-6666-6666-666666666666")
+
+    response = client.get("/admin/payouts", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 403
+    assert client._mock_calls == []
+
+
+def test_admin_payouts_route_with_admin_token_hits_unconfigured_booking_service(client):
+    # Same reasoning as test_admin_tickets_route_with_admin_token_hits_unconfigured_
+    # booking_service above: booking-service has no mock host in this suite, so the
+    # strongest assertion is that an admin token gets *past* auth (503, not 401/403).
+    token = make_access_token(user_id="admin-1", role="admin")
+
+    response = client.get("/admin/payouts", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 503
+    assert client._mock_calls == []
+
+
+def test_admin_payout_mark_paid_route_with_non_admin_token_is_forbidden(client):
+    token = make_access_token(user_id="66666666-6666-6666-6666-666666666666")
+
+    response = client.post(
+        "/admin/payouts/some-payout-id/mark-paid",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 403
+    assert client._mock_calls == []
+
+
+def test_admin_users_route_without_token_is_rejected(client):
+    response = client.get("/admin/users")
+
+    assert response.status_code == 401
+    assert client._mock_calls == []
+
+
+def test_admin_users_route_with_non_admin_token_is_forbidden(client):
+    token = make_access_token(user_id="66666666-6666-6666-6666-666666666666")
+
+    response = client.get("/admin/users", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 403
+    assert client._mock_calls == []
+
+
+def test_admin_users_route_with_admin_token_forwards(client):
+    token = make_access_token(user_id="admin-1", role="admin")
+
+    response = client.get("/admin/users", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 200
+    forwarded = client._mock_calls[0]
+    assert forwarded.url.host == "auth-service.test"
+    assert forwarded.url.path == "/admin/users"
+
+
+def test_admin_user_detail_route_with_admin_token_forwards(client):
+    token = make_access_token(user_id="admin-1", role="admin")
+
+    response = client.get(
+        "/admin/users/33333333-3333-3333-3333-333333333333",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    forwarded = client._mock_calls[0]
+    assert forwarded.url.host == "auth-service.test"
+    assert forwarded.url.path == "/admin/users/33333333-3333-3333-3333-333333333333"
