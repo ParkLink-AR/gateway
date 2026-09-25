@@ -40,6 +40,12 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["POST"], "/auth/registration/phone/confirm", "auth", PUBLIC),
     ProxyRoute(["POST"], "/auth/password-reset/request", "auth", PUBLIC),
     ProxyRoute(["POST"], "/auth/password-reset/confirm", "auth", PUBLIC),
+    # ParkLink-staff login -- a completely separate identity system from the
+    # app's own users (see app/models/admin_account.py in auth-service): no
+    # relation to /auth/login above, own username/password, own JWT issuance.
+    # PUBLIC like /auth/login, for the same reason (you need a token before
+    # you can be authenticated).
+    ProxyRoute(["POST"], "/admin/auth/login", "auth", PUBLIC),
     # -- users (identity lives in auth-service; sub-resources belong to
     #    whichever service owns them) -----------------------------------
     ProxyRoute(["GET"], "/users/{id}/parking-spots", "parking", PUBLIC),
@@ -115,6 +121,14 @@ ROUTE_TABLE: list[ProxyRoute] = [
     # route registered before the bare list, same convention as elsewhere.
     ProxyRoute(["GET"], "/admin/users/{id}", "auth", ADMIN),
     ProxyRoute(["GET"], "/admin/users", "auth", ADMIN),
+    # Admin-account management (creating/listing/deactivating ParkLink-staff
+    # accounts). Gateway only enforces the blanket role:"admin" claim here --
+    # the finer SUPERADMIN-only check happens inside auth-service itself
+    # (see app/api/admin_auth.py), same pattern as this codebase already uses
+    # wherever an endpoint needs more than the gateway's binary ADMIN gate.
+    ProxyRoute(["POST"], "/admin/accounts", "auth", ADMIN),
+    ProxyRoute(["GET"], "/admin/accounts", "auth", ADMIN),
+    ProxyRoute(["PATCH"], "/admin/accounts/{id}", "auth", ADMIN),
     # -- parking-service ------------------------------------------------
     ProxyRoute(["GET"], "/geocode/reverse", "parking", PUBLIC),
     ProxyRoute(["GET"], "/geocode", "parking", PUBLIC),

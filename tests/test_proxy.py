@@ -312,3 +312,74 @@ def test_admin_user_detail_route_with_admin_token_forwards(client):
     forwarded = client._mock_calls[0]
     assert forwarded.url.host == "auth-service.test"
     assert forwarded.url.path == "/admin/users/33333333-3333-3333-3333-333333333333"
+
+
+def test_admin_auth_login_route_is_public_and_forwards(client):
+    # Separate identity system from /auth/login (see auth-service's AdminAccount) --
+    # still PUBLIC because you need a token before you can carry one.
+    response = client.post(
+        "/admin/auth/login",
+        json={"username": "superadmin", "password": "whatever"},
+    )
+
+    assert response.status_code == 200
+    forwarded = client._mock_calls[0]
+    assert forwarded.url.host == "auth-service.test"
+    assert forwarded.url.path == "/admin/auth/login"
+    assert "x-user-id" not in forwarded.headers
+
+
+def test_admin_accounts_route_without_token_is_rejected(client):
+    response = client.get("/admin/accounts")
+
+    assert response.status_code == 401
+    assert client._mock_calls == []
+
+
+def test_admin_accounts_route_with_non_admin_token_is_forbidden(client):
+    token = make_access_token(user_id="66666666-6666-6666-6666-666666666666")
+
+    response = client.get("/admin/accounts", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 403
+    assert client._mock_calls == []
+
+
+def test_admin_accounts_route_with_admin_token_forwards(client):
+    token = make_access_token(user_id="admin-1", role="admin")
+
+    response = client.get("/admin/accounts", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 200
+    forwarded = client._mock_calls[0]
+    assert forwarded.url.host == "auth-service.test"
+    assert forwarded.url.path == "/admin/accounts"
+    assert forwarded.headers["x-user-id"] == "admin-1"
+
+
+def test_admin_accounts_create_route_with_non_admin_token_is_forbidden(client):
+    token = make_access_token(user_id="66666666-6666-6666-6666-666666666666")
+
+    response = client.post(
+        "/admin/accounts",
+        json={"username": "new-admin", "password": "x", "role": "ADMIN"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 403
+    assert client._mock_calls == []
+
+
+def test_admin_account_patch_route_with_admin_token_forwards(client):
+    token = make_access_token(user_id="admin-1", role="admin")
+
+    response = client.patch(
+        "/admin/accounts/44444444-4444-4444-4444-444444444444",
+        json={"is_active": False},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    forwarded = client._mock_calls[0]
+    assert forwarded.url.host == "auth-service.test"
+    assert forwarded.url.path == "/admin/accounts/44444444-4444-4444-4444-444444444444"
