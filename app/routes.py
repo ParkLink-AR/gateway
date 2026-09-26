@@ -50,6 +50,9 @@ ROUTE_TABLE: list[ProxyRoute] = [
     #    whichever service owns them) -----------------------------------
     ProxyRoute(["GET"], "/users/{id}/parking-spots", "parking", PUBLIC),
     ProxyRoute(["GET"], "/users/{id}/bookings/history", "booking", REQUIRED),
+    # Owner's own "Finanzas" history -- PAID settlements only (a still-PENDING draft is
+    # hidden even from its own owner, see booking-service's GetOwnSettlementUseCase).
+    ProxyRoute(["GET"], "/users/{id}/settlements", "booking", REQUIRED),
     ProxyRoute(["GET"], "/users/{id}/reviews", "booking", REQUIRED),
     ProxyRoute(["POST"], "/users/{id}/avatar", "auth", REQUIRED),
     ProxyRoute(["POST"], "/users/{id}/email/confirm", "auth", REQUIRED),
@@ -90,6 +93,11 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["GET"], "/tickets/{id}/messages", "booking", REQUIRED),
     ProxyRoute(["POST"], "/tickets/{id}/messages", "booking", REQUIRED),
     ProxyRoute(["GET"], "/tickets/{id}", "booking", REQUIRED),
+    # Owner's own settlement detail -- REQUIRED, not ADMIN: booking-service's
+    # GetOwnSettlementUseCase itself enforces the caller owns it (403 otherwise), same
+    # "gateway just authenticates, the service checks resource ownership" pattern as
+    # /tickets/{id} above.
+    ProxyRoute(["GET"], "/settlements/{id}", "booking", REQUIRED),
     # -- support tickets, ParkLink-staff side (admin-dashboard) -- ADMIN, not
     # REQUIRED: only a token with role:"admin" may reach these (see
     # app.security.authenticate_admin). --------------------------------
@@ -99,19 +107,31 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["GET"], "/admin/tickets/{id}", "booking", ADMIN),
     ProxyRoute(["GET"], "/admin/tickets", "booking", ADMIN),
     # -- owner payouts/settlements queue, ParkLink-staff side -- same ADMIN
-    # reasoning as the support tickets block above. mark-paid (a sub-action on
-    # a specific payout) is registered before the bare /admin/payouts/{id},
-    # which in turn comes before the /admin/payouts list, mirroring the
-    # tickets/{id}/messages -> tickets/{id} -> tickets ordering above. Note
-    # mark-paid accepts multipart/form-data (optional receipt upload); the
-    # proxy forwards the raw body and headers as-is, so that passes through
-    # untouched, same as any other content-type on this route table.
-    ProxyRoute(["POST"], "/admin/payouts/{id}/mark-paid", "booking", ADMIN),
+    # reasoning as the support tickets block above. Payouts accumulate per
+    # booking automatically, but are only ever paid out in a batch per owner
+    # (see booking-service's DraftSettlementUseCase/ConfirmSettlementUseCase):
+    # an admin drafts a settlement (freezes the current pending total), then
+    # confirms it (optional multipart receipt upload) once the transfer
+    # actually went out -- draft/confirm/cancel replace the old single-payout
+    # mark-paid action entirely.
     ProxyRoute(["GET"], "/admin/payouts/{id}", "booking", ADMIN),
     ProxyRoute(["GET"], "/admin/payouts", "booking", ADMIN),
     # Aggregate view of everything an owner has received across all their
     # spots -- distinct prefix from /admin/payouts above, no ordering conflict.
     ProxyRoute(["GET"], "/admin/owners/{id}/bookings", "booking", ADMIN),
+    # Who currently has an unsettled balance -- the admin panel's starting
+    # point for deciding who to pay next.
+    ProxyRoute(["GET"], "/admin/owners/pending-balances", "booking", ADMIN),
+    # Phase 1 (freeze the amount) -- no proof yet, see comment above.
+    ProxyRoute(["POST"], "/admin/owners/{id}/settlements", "booking", ADMIN),
+    # Phase 2 (confirm the transfer went out, optional receipt) and the
+    # mistake-undo escape hatch -- registered before the bare
+    # /admin/settlements/{id}, same {id}/sub-action-before-{id} convention as
+    # the tickets/payouts blocks above.
+    ProxyRoute(["POST"], "/admin/settlements/{id}/confirm", "booking", ADMIN),
+    ProxyRoute(["POST"], "/admin/settlements/{id}/cancel", "booking", ADMIN),
+    ProxyRoute(["GET"], "/admin/settlements/{id}", "booking", ADMIN),
+    ProxyRoute(["GET"], "/admin/settlements", "booking", ADMIN),
     # Admin-configurable commission rate used when computing payouts.
     ProxyRoute(["GET"], "/admin/settings/commission", "booking", ADMIN),
     ProxyRoute(["PUT"], "/admin/settings/commission", "booking", ADMIN),

@@ -261,15 +261,48 @@ def test_admin_payouts_route_with_admin_token_hits_unconfigured_booking_service(
     assert client._mock_calls == []
 
 
-def test_admin_payout_mark_paid_route_with_non_admin_token_is_forbidden(client):
+def test_admin_owner_settlement_draft_route_with_non_admin_token_is_forbidden(client):
     token = make_access_token(user_id="66666666-6666-6666-6666-666666666666")
 
     response = client.post(
-        "/admin/payouts/some-payout-id/mark-paid",
+        "/admin/owners/some-owner-id/settlements",
         headers={"Authorization": f"Bearer {token}"},
     )
 
     assert response.status_code == 403
+    assert client._mock_calls == []
+
+
+def test_admin_settlement_confirm_route_with_admin_token_hits_unconfigured_booking_service(client):
+    token = make_access_token(user_id="admin-1", role="admin")
+
+    response = client.post(
+        "/admin/settlements/some-settlement-id/confirm",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 503
+    assert client._mock_calls == []
+
+
+def test_owner_settlement_detail_route_without_token_is_rejected(client):
+    response = client.get("/settlements/some-settlement-id")
+
+    assert response.status_code == 401
+    assert client._mock_calls == []
+
+
+def test_owner_settlement_detail_route_with_valid_token_hits_unconfigured_booking_service(client):
+    # booking-service has no mock host in this suite (see conftest.py), so the strongest
+    # assertion is that a valid token gets *past* auth (503, not 401).
+    token = make_access_token()
+
+    response = client.get(
+        "/settlements/some-settlement-id",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 503
     assert client._mock_calls == []
 
 
