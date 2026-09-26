@@ -352,6 +352,24 @@ def test_admin_users_route_with_admin_token_forwards(client):
     assert forwarded.url.path == "/admin/users"
 
 
+def test_get_admin_account_route_without_token_is_rejected(client):
+    response = client.get("/admin/accounts/some-admin-id")
+
+    assert response.status_code == 401
+    assert client._mock_calls == []
+
+
+def test_get_admin_account_route_with_admin_token_forwards(client):
+    token = make_access_token(user_id="admin-1", role="admin")
+
+    response = client.get("/admin/accounts/some-admin-id", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 200
+    forwarded = client._mock_calls[0]
+    assert forwarded.url.host == "auth-service.test"
+    assert forwarded.url.path == "/admin/accounts/some-admin-id"
+
+
 def test_admin_user_detail_route_with_admin_token_forwards(client):
     token = make_access_token(user_id="admin-1", role="admin")
 

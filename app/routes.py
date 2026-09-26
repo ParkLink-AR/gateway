@@ -154,6 +154,9 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["GET"], "/admin/accounts", "auth", ADMIN),
     ProxyRoute(["POST"], "/admin/accounts/{id}/password", "auth", ADMIN),
     ProxyRoute(["PATCH"], "/admin/accounts/{id}", "auth", ADMIN),
+    # No superadmin gate on this one (see auth-service's get_admin_account) -- any admin
+    # can resolve another admin id's username, e.g. a settlement's "creado por"/"pagado por".
+    ProxyRoute(["GET"], "/admin/accounts/{id}", "auth", ADMIN),
     # -- parking-service ------------------------------------------------
     ProxyRoute(["GET"], "/geocode/reverse", "parking", PUBLIC),
     ProxyRoute(["GET"], "/geocode", "parking", PUBLIC),
