@@ -53,6 +53,10 @@ ROUTE_TABLE: list[ProxyRoute] = [
     # Owner's own "Finanzas" history -- PAID settlements only (a still-PENDING draft is
     # hidden even from its own owner, see booking-service's GetOwnSettlementUseCase).
     ProxyRoute(["GET"], "/users/{id}/settlements", "booking", REQUIRED),
+    # Every support ticket this user has ever opened, across every booking -- the mobile
+    # app's in-app notification feed uses this to surface support.ticket_replied without a
+    # dedicated per-ticket poll.
+    ProxyRoute(["GET"], "/users/{id}/tickets", "booking", REQUIRED),
     ProxyRoute(["GET"], "/users/{id}/reviews", "booking", REQUIRED),
     ProxyRoute(["POST"], "/users/{id}/avatar", "auth", REQUIRED),
     ProxyRoute(["POST"], "/users/{id}/email/confirm", "auth", REQUIRED),

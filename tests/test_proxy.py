@@ -306,6 +306,25 @@ def test_owner_settlement_detail_route_with_valid_token_hits_unconfigured_bookin
     assert client._mock_calls == []
 
 
+def test_users_tickets_route_without_token_is_rejected(client):
+    response = client.get("/users/11111111-1111-1111-1111-111111111111/tickets")
+
+    assert response.status_code == 401
+    assert client._mock_calls == []
+
+
+def test_users_tickets_route_with_valid_token_hits_unconfigured_booking_service(client):
+    token = make_access_token()
+
+    response = client.get(
+        "/users/11111111-1111-1111-1111-111111111111/tickets",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 503
+    assert client._mock_calls == []
+
+
 def test_admin_users_route_without_token_is_rejected(client):
     response = client.get("/admin/users")
 
