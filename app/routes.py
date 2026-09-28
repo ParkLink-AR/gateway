@@ -106,6 +106,10 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["POST"], "/parking-spots/{id}/photos", "parking", REQUIRED),
     ProxyRoute(["DELETE"], "/parking-spots/{id}/photos", "parking", REQUIRED),
     ProxyRoute(["PUT"], "/parking-spots/{id}/photos/order", "parking", REQUIRED),
+    # Documentación de respaldo para la revisión de un admin -- separada de
+    # /photos (esas son las fotos que ve el conductor). Mismo nivel de auth
+    # que subir/borrar fotos: sólo el dueño de la cochera.
+    ProxyRoute(["POST"], "/parking-spots/{id}/verification-photos", "parking", REQUIRED),
     ProxyRoute(["PATCH"], "/parking-spots/{id}/status", "parking", REQUIRED),
     ProxyRoute(["PUT"], "/parking-spots/{id}/pricing", "parking", REQUIRED),
     ProxyRoute(["PUT"], "/parking-spots/{id}/schedule", "parking", REQUIRED),
@@ -116,6 +120,11 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["GET"], "/favorites", "parking", REQUIRED),
     ProxyRoute(["POST"], "/favorites", "parking", REQUIRED),
     ProxyRoute(["DELETE"], "/favorites/{parking_spot_id}", "parking", REQUIRED),
+    # -- cochera nueva pendiente de revisión, ParkLink-staff side
+    # (admin-dashboard) -- ADMIN, mismo criterio que /admin/tickets arriba. --
+    ProxyRoute(["GET"], "/admin/parking-spots/{id}", "parking", ADMIN),
+    ProxyRoute(["PATCH"], "/admin/parking-spots/{id}/review", "parking", ADMIN),
+    ProxyRoute(["GET"], "/admin/parking-spots", "parking", ADMIN),
     # -- payment-service (mounted at /api/payments/* downstream) --------
     ProxyRoute(["GET"], "/payments/metrics", "payment", REQUIRED),
     ProxyRoute(["POST"], "/payments/create-preference", "payment", REQUIRED),
