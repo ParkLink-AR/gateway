@@ -17,7 +17,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     # track (the largest configured window is 60s), so it's safe to drop.
     SWEEP_INTERVAL_SECONDS = 300
 
-    def __init__(self, app, default_limit: int = 120, default_window: int = 60):
+    def __init__(self, app, default_limit: int = 300, default_window: int = 60):
         super().__init__(app)
         self.default_limit = default_limit
         self.default_window = default_window
