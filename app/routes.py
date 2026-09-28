@@ -72,6 +72,8 @@ ROUTE_TABLE: list[ProxyRoute] = [
     # internal-only endpoints in this codebase.)
     ProxyRoute(["GET"], "/users/{id}/payout-info", "auth", REQUIRED),
     ProxyRoute(["PUT"], "/users/{id}/payout-info", "auth", REQUIRED),
+    ProxyRoute(["POST"], "/users/{id}/password/verify", "auth", REQUIRED),
+    ProxyRoute(["PUT"], "/users/{id}/password", "auth", REQUIRED),
     ProxyRoute(["GET"], "/users/{id}", "auth", REQUIRED),
     ProxyRoute(["PUT"], "/users/{id}", "auth", REQUIRED),
     ProxyRoute(["DELETE"], "/users/{id}", "auth", REQUIRED),
