@@ -94,6 +94,10 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["GET"], "/bookings/{id}/tickets", "booking", REQUIRED),
     ProxyRoute(["GET"], "/bookings/{id}", "booking", REQUIRED),
     ProxyRoute(["POST"], "/bookings", "booking", REQUIRED),
+    # Read-only, non-admin: mobile needs the current commission rate to show a price
+    # breakdown (owner receives X, driver pays X + commission) when creating a spot and
+    # when viewing one.
+    ProxyRoute(["GET"], "/settings/commission", "booking", REQUIRED),
     # A booking-scoped support ticket, once opened, is addressed by its own id
     # rather than nested under /bookings/{id} -- same shape as /tickets/{id}/*.
     ProxyRoute(["GET"], "/tickets/{id}/messages", "booking", REQUIRED),
