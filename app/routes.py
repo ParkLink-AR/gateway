@@ -72,6 +72,14 @@ ROUTE_TABLE: list[ProxyRoute] = [
     # internal-only endpoints in this codebase.)
     ProxyRoute(["GET"], "/users/{id}/payout-info", "auth", REQUIRED),
     ProxyRoute(["PUT"], "/users/{id}/payout-info", "auth", REQUIRED),
+    # A driver's own saved vehicles (dominio/marca/modelo/país) -- entirely optional,
+    # self-service, same reasoning as payout-info above. Picked (optionally) when booking a
+    # spot; booking-service stores its own snapshot of whichever one was picked, so this
+    # sub-resource is purely for managing the saved list, never read by booking-service
+    # directly.
+    ProxyRoute(["GET"], "/users/{id}/vehicles", "auth", REQUIRED),
+    ProxyRoute(["POST"], "/users/{id}/vehicles", "auth", REQUIRED),
+    ProxyRoute(["DELETE"], "/users/{id}/vehicles/{vehicle_id}", "auth", REQUIRED),
     ProxyRoute(["POST"], "/users/{id}/password/verify", "auth", REQUIRED),
     ProxyRoute(["PUT"], "/users/{id}/password", "auth", REQUIRED),
     ProxyRoute(["GET"], "/users/{id}", "auth", REQUIRED),
