@@ -71,16 +71,17 @@ def _forward_request_headers(request: Request, user_id: str | None, admin_role: 
     if settings.GATEWAY_INTERNAL_SECRET:
         headers["x-gateway-secret"] = settings.GATEWAY_INTERNAL_SECRET
     if user_id is not None:
-        # Downstream services can trust this instead of re-verifying the JWT
-        # themselves (see parking-service's TODO about ownerId coming "from
-        # the JWT extracted by the auth-service middleware" -- this is that
-        # middleware, now living at the gateway). The original Authorization
-        # header is still forwarded as-is for services that want to check it.
+        # Downstream services trust this instead of re-verifying the JWT
+        # themselves -- safe because each one only accepts requests carrying
+        # x-gateway-secret (set above) or the service-to-service key. The
+        # original Authorization header is still forwarded as-is for services
+        # that want to check it.
         headers["x-user-id"] = user_id
     if admin_role is not None:
-        # ADMIN-mode routes only -- lets a service that doesn't own the admin_accounts
-        # table (e.g. booking-service's commission settings) gate a SUPERADMIN-only
-        # action on this instead of calling back into auth-service to look it up.
+        # Set for any ParkLink admin token (ADMIN routes, and REQUIRED routes the admin
+        # panel shares with the app) -- lets services let staff past per-user ownership
+        # checks, and gate SUPERADMIN-only actions (e.g. booking-service's commission
+        # settings) without calling back into auth-service to look it up.
         headers["x-admin-role"] = admin_role
     return headers
 
@@ -95,7 +96,7 @@ def make_proxy_handler(service: str, auth_mode: AuthMode) -> Callable:
         admin_role: str | None = None
         if auth_mode is AuthMode.REQUIRED:
             try:
-                user_id = authenticate(request.headers.get("authorization"))
+                user_id, admin_role = authenticate(request.headers.get("authorization"))
             except InvalidTokenError as exc:
                 return problem_response(request, 401, "Unauthorized", str(exc))
         elif auth_mode is AuthMode.ADMIN:

@@ -138,6 +138,10 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["GET"], "/admin/payouts", "booking", ADMIN),
     # Aggregate view of everything an owner has received across all their
     # spots -- distinct prefix from /admin/payouts above, no ordering conflict.
+    # Paid bookings that completed without their arrival code ever being verified --
+    # the owner's payout waits until an admin approves (pays out) or refunds each one.
+    ProxyRoute(["POST"], "/admin/bookings/{id}/verification-review", "booking", ADMIN),
+    ProxyRoute(["GET"], "/admin/bookings/unverified", "booking", ADMIN),
     ProxyRoute(["GET"], "/admin/owners/{id}/bookings", "booking", ADMIN),
     # Who currently has an unsettled balance -- the admin panel's starting
     # point for deciding who to pay next.
@@ -209,15 +213,13 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["GET"], "/payments/metrics", "payment", REQUIRED),
     ProxyRoute(["POST"], "/payments/create-preference", "payment", REQUIRED),
     ProxyRoute(["POST"], "/payments/webhook", "payment", PUBLIC),
-    ProxyRoute(["GET"], "/payments/redirect", "payment", PUBLIC),
-    # REQUIRED, not PUBLIC: this looks up a payment (amount, payer email) by
-    # external_reference/paymentId with no ownership check on payment-service's
-    # side, so anyone with a reference could query someone else's payment.
-    # Mobile's request() always attaches the bearer token when there is one
-    # (see pending.tsx's polling loop), so this doesn't break that flow.
+    # REQUIRED: payment-service also checks the booking is the caller's own.
     ProxyRoute(["POST"], "/payments/verify-status", "payment", REQUIRED),
-    ProxyRoute(["GET"], "/payments/external-reference/{external_reference}", "payment", REQUIRED),
-    ProxyRoute(["GET"], "/payments/{payment_id}", "payment", REQUIRED),
+    # Where a cancelled booking's refund stands -- payment-service checks it's the
+    # caller's own booking.
+    ProxyRoute(["GET"], "/payments/refund-status/{booking_id}", "payment", REQUIRED),
+    # No /payments/{payment_id} or /payments/external-reference/{ref}: those lookups are
+    # staff-only on payment-service (they carry the payer's email) and nothing routes them.
     # -- notifications-service ----------------------------------------
     # Only the device-token registry is exposed; domain notifications flow
     # over RabbitMQ, not HTTP, so the client never proxies anything else here.

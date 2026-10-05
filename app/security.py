@@ -44,12 +44,16 @@ def decode_access_token(token: str) -> dict:
     return payload
 
 
-def authenticate(authorization_header: str | None) -> str:
-    """Returns the authenticated user_id (token 'sub' claim), raising
-    InvalidTokenError otherwise."""
+def authenticate(authorization_header: str | None) -> tuple[str, str | None]:
+    """Returns (user_id, admin_role) for any valid access token, raising InvalidTokenError
+    otherwise. admin_role is None for a regular user's token; for a ParkLink admin's token
+    it's their 'admin_role' claim (defaulting to "ADMIN"), so REQUIRED routes the admin
+    panel also uses (e.g. a driver's booking history) can let staff through the
+    per-user ownership checks downstream services apply to everyone else."""
     token = extract_bearer_token(authorization_header)
     payload = decode_access_token(token)
-    return payload["sub"]
+    admin_role = (payload.get("admin_role") or "ADMIN") if payload.get("role") == "admin" else None
+    return payload["sub"], admin_role
 
 
 def authenticate_admin(authorization_header: str | None) -> tuple[str, str | None]:

@@ -75,12 +75,18 @@ def test_payment_webhook_is_public(client):
     assert forwarded.url.path == "/api/payments/webhook"
 
 
-def test_payment_redirect_is_public(client):
-    response = client.get("/payments/redirect?status=approved")
-
-    assert response.status_code == 200
-    forwarded = client._mock_calls[0]
-    assert forwarded.url.path == "/api/payments/redirect"
+def test_removed_payment_routes_are_not_proxied(client):
+    # /payments/redirect never had a handler; the transaction lookups are staff-only on
+    # payment-service and unused by the app; /bookings/{id}/confirm is payment-service-only.
+    for method, path in [
+        ("GET", "/payments/redirect?status=approved"),
+        ("GET", "/payments/123"),
+        ("GET", "/payments/external-reference/ref-1"),
+        ("POST", "/bookings/11111111-1111-1111-1111-111111111111/confirm"),
+    ]:
+        response = client.request(method, path)
+        assert response.status_code in (404, 405), path
+    assert client._mock_calls == []
 
 
 def test_availability_subresource_routes_to_parking_not_booking(client):
