@@ -89,7 +89,9 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["GET"], "/parking-spots/{id}/bookings/detailed", "booking", REQUIRED),
     ProxyRoute(["GET"], "/parking-spots/{id}/bookings", "booking", REQUIRED),
     ProxyRoute(["GET"], "/parking-spots/{id}/reviews", "booking", PUBLIC),
-    ProxyRoute(["POST"], "/bookings/{id}/confirm", "booking", REQUIRED),
+    # POST /bookings/{id}/confirm is deliberately NOT routed: only payment-service may
+    # confirm a booking (after Mercado Pago approves the payment), calling booking-service
+    # directly with the shared INTERNAL_SERVICE_KEY.
     ProxyRoute(["POST"], "/bookings/{id}/approve", "booking", REQUIRED),
     ProxyRoute(["POST"], "/bookings/{id}/reject", "booking", REQUIRED),
     ProxyRoute(["POST"], "/bookings/{id}/verify-code", "booking", REQUIRED),
