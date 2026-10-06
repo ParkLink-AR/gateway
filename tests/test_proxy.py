@@ -481,3 +481,43 @@ def test_admin_account_patch_route_with_admin_token_forwards(client):
     forwarded = client._mock_calls[0]
     assert forwarded.url.host == "auth-service.test"
     assert forwarded.url.path == "/admin/accounts/44444444-4444-4444-4444-444444444444"
+
+
+def test_admin_parking_spots_review_queue_requires_admin(client):
+    assert client.get("/admin/parking-spots").status_code == 401
+
+    token = make_access_token(user_id="66666666-6666-6666-6666-666666666666")
+    response = client.get("/admin/parking-spots", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 403
+    assert client._mock_calls == []
+
+
+def test_admin_parking_spots_review_routes_forward_to_parking_with_admin_token(client):
+    token = make_access_token(user_id="admin-1", role="admin")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    client.get("/admin/parking-spots", headers=headers)
+    client.get("/admin/parking-spots/spot-1", headers=headers)
+    client.patch("/admin/parking-spots/spot-1/review", headers=headers, json={"decision": "approved"})
+
+    forwarded = [(c.method, c.url.host, c.url.path) for c in client._mock_calls]
+    assert forwarded == [
+        ("GET", "parking-service.test", "/admin/parking-spots"),
+        ("GET", "parking-service.test", "/admin/parking-spots/spot-1"),
+        ("PATCH", "parking-service.test", "/admin/parking-spots/spot-1/review"),
+    ]
+
+
+def test_spot_verification_photos_upload_requires_auth_and_forwards_to_parking(client):
+    assert client.post("/parking-spots/spot-1/verification-photos").status_code == 401
+
+    response = client.post(
+        "/parking-spots/spot-1/verification-photos",
+        headers={"Authorization": f"Bearer {make_access_token()}"},
+    )
+
+    assert response.status_code == 200
+    forwarded = client._mock_calls[0]
+    assert forwarded.url.host == "parking-service.test"
+    assert forwarded.url.path == "/parking-spots/spot-1/verification-photos"
