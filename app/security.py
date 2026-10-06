@@ -44,25 +44,33 @@ def decode_access_token(token: str) -> dict:
     return payload
 
 
-def authenticate(authorization_header: str | None) -> str:
-    """Returns the authenticated user_id (token 'sub' claim), raising
-    InvalidTokenError otherwise."""
+def authenticate(authorization_header: str | None) -> tuple[str, str | None]:
+    """Returns (user_id, admin_role) for any valid access token, raising InvalidTokenError
+    otherwise. admin_role is None for a regular user's token; for a ParkLink admin's token
+    it's their 'admin_role' claim (defaulting to "ADMIN"), so REQUIRED routes the admin
+    panel also uses (e.g. a driver's booking history) can let staff through the
+    per-user ownership checks downstream services apply to everyone else."""
     token = extract_bearer_token(authorization_header)
     payload = decode_access_token(token)
-    return payload["sub"]
+    admin_role = (payload.get("admin_role") or "ADMIN") if payload.get("role") == "admin" else None
+    return payload["sub"], admin_role
 
 
-def authenticate_admin(authorization_header: str | None) -> str:
-    """Returns the authenticated admin's user_id (token 'sub' claim).
+def authenticate_admin(authorization_header: str | None) -> tuple[str, str | None]:
+    """Returns (admin_id, admin_role) for a valid admin token -- admin_id is the token's
+    'sub' claim (an AdminAccount id, see auth-service's separate admin identity system, not
+    a `users` row), admin_role is its 'admin_role' claim ("SUPERADMIN"/"ADMIN").
 
     Raises InvalidTokenError for a missing/malformed/expired token (401), or
-    NotAdminError for an otherwise-valid token whose role claim isn't "admin"
-    (403). auth-service doesn't issue role:"admin" tokens today (see
-    payment-service's identical convention in src/security.js) -- they're
-    minted by hand with the shared JWT_SECRET for ParkLink staff.
+    NotAdminError for an otherwise-valid token whose role claim isn't "admin" (403).
+    admin_role is forwarded downstream (see proxy.py's x-admin-role header) so services
+    that don't own the admin_accounts table (e.g. booking-service's commission settings)
+    can still gate SUPERADMIN-only actions without a network round-trip back to
+    auth-service -- same "the gateway already did this, trust the header" philosophy as
+    x-user-id.
     """
     token = extract_bearer_token(authorization_header)
     payload = decode_access_token(token)
     if payload.get("role") != "admin":
         raise NotAdminError("Admin privileges required")
-    return payload["sub"]
+    return payload["sub"], payload.get("admin_role")

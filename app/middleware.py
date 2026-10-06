@@ -17,7 +17,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     # track (the largest configured window is 60s), so it's safe to drop.
     SWEEP_INTERVAL_SECONDS = 300
 
-    def __init__(self, app, default_limit: int = 120, default_window: int = 60):
+    def __init__(self, app, default_limit: int = 300, default_window: int = 60):
         super().__init__(app)
         self.default_limit = default_limit
         self.default_window = default_window
@@ -35,7 +35,15 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         }
 
     def _get_client_ip(self, request: Request) -> str:
-        # Render (our only reverse proxy in front of the gateway) appends its
+        # Cloudflare (used locally via `cloudflared tunnel` to expose the gateway during
+        # dev/testing) always sets this to the real originating client's address, not
+        # forgeable by the client since only Cloudflare's own edge sets it -- checked first
+        # so every device testing through the same tunnel gets its own bucket instead of
+        # all of them colliding on the tunnel's single apparent last hop below.
+        cf_connecting_ip = request.headers.get("cf-connecting-ip")
+        if cf_connecting_ip:
+            return cf_connecting_ip.strip()
+        # Render (our only reverse proxy in front of the gateway in production) appends its
         # own resolved address to X-Forwarded-For rather than replacing it, so
         # the FIRST entry is whatever the client sent and can't be trusted --
         # a client can put anything there to dodge the limit. The LAST entry

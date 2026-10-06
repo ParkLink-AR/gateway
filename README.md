@@ -57,11 +57,11 @@ la request. Si es válido:
   reemplaza esa lógica, solo la adelanta).
 - Agrega `X-User-Id: <sub del token>` a la request downstream.
 
-Esto es justo lo que pide el `TODO` de `parking-service` ("ownerId vendrá del JWT extraído por
-el middleware de auth-service"): ahora ese middleware es el gateway. Cualquier servicio que
-confíe en el gateway como único punto de entrada puede leer `X-User-Id` en vez de decodificar
-el JWT él mismo. (Ese lado — que `parking-service`, `payment-service` y `booking-service` lean
-el header — queda pendiente en cada uno de esos repos, no es algo que se pueda hacer desde acá.)
+Los servicios leen `X-User-Id` en vez de decodificar el JWT ellos mismos. Para que nadie pueda
+mandarles ese header saltándose el gateway, el gateway agrega `X-Gateway-Secret`
+(`GATEWAY_INTERNAL_SECRET`) y cada servicio rechaza cualquier request que no lo traiga (o que no
+traiga `X-Internal-Key`, la clave para llamadas entre servicios). Para un token de admin, también
+agrega `X-Admin-Role`, así los servicios dejan pasar al panel de admin por sus chequeos de dueño.
 
 Si falta el token, es inválido o expiró, el gateway corta con `401` sin llegar a golpear el
 servicio downstream.
