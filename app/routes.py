@@ -28,6 +28,8 @@ ROUTE_TABLE: list[ProxyRoute] = [
     # -- auth-service --------------------------------------------------
     ProxyRoute(["POST"], "/auth/register", "auth", PUBLIC),
     ProxyRoute(["POST"], "/auth/login", "auth", PUBLIC),
+    # Logging in to an account whose deletion is scheduled: cancels it and logs in.
+    ProxyRoute(["POST"], "/auth/reactivate", "auth", PUBLIC),
     ProxyRoute(["POST"], "/auth/refresh", "auth", PUBLIC),
     ProxyRoute(["POST"], "/auth/logout", "auth", PUBLIC),
     ProxyRoute(["GET"], "/auth/sessions", "auth", REQUIRED),
@@ -82,9 +84,12 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["DELETE"], "/users/{id}/vehicles/{vehicle_id}", "auth", REQUIRED),
     ProxyRoute(["POST"], "/users/{id}/password/verify", "auth", REQUIRED),
     ProxyRoute(["PUT"], "/users/{id}/password", "auth", REQUIRED),
+    # Account deletion: what it would do (GET), schedule it (POST). It's cancelled by
+    # reactivating the account when logging in (/auth/reactivate).
+    ProxyRoute(["GET"], "/users/{id}/deletion", "auth", REQUIRED),
+    ProxyRoute(["POST"], "/users/{id}/deletion", "auth", REQUIRED),
     ProxyRoute(["GET"], "/users/{id}", "auth", REQUIRED),
     ProxyRoute(["PUT"], "/users/{id}", "auth", REQUIRED),
-    ProxyRoute(["DELETE"], "/users/{id}", "auth", REQUIRED),
     # -- booking-service (owns these /parking-spots/{id}/* sub-resources) --
     ProxyRoute(["GET"], "/parking-spots/{id}/bookings/detailed", "booking", REQUIRED),
     ProxyRoute(["GET"], "/parking-spots/{id}/bookings", "booking", REQUIRED),
@@ -163,6 +168,11 @@ ROUTE_TABLE: list[ProxyRoute] = [
     # REQUIRED, same reasoning as the /admin/tickets/* block above: staff
     # searching/viewing user accounts to administer payouts. {id}-specific
     # route registered before the bare list, same convention as elsewhere.
+    # Account lifecycle: suspend / reactivate, and delete at the holder's request.
+    ProxyRoute(["GET"], "/admin/users/{id}/closure-summary", "auth", ADMIN),
+    ProxyRoute(["POST"], "/admin/users/{id}/suspend", "auth", ADMIN),
+    ProxyRoute(["POST"], "/admin/users/{id}/reactivate", "auth", ADMIN),
+    ProxyRoute(["POST"], "/admin/users/{id}/deletion", "auth", ADMIN),
     ProxyRoute(["GET"], "/admin/users/{id}", "auth", ADMIN),
     ProxyRoute(["GET"], "/admin/users", "auth", ADMIN),
     # Admin-account management (creating/listing/deactivating ParkLink-staff
