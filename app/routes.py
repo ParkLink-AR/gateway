@@ -240,10 +240,15 @@ ROUTE_TABLE: list[ProxyRoute] = [
     # No /payments/{payment_id} or /payments/external-reference/{ref}: those lookups are
     # staff-only on payment-service (they carry the payer's email) and nothing routes them.
     # -- notifications-service ----------------------------------------
-    # Only the device-token registry is exposed; domain notifications flow
-    # over RabbitMQ, not HTTP, so the client never proxies anything else here.
+    # The device-token registry (push), and the user's own notifications inbox -- the
+    # list behind the app's notifications tab and its unread badge. The live "something
+    # new" hint is a WebSocket the gateway serves itself (/notifications/live, see
+    # app/live.py), not a proxied route.
     ProxyRoute(["DELETE"], "/notifications/tokens/{token}", "notifications", REQUIRED),
     ProxyRoute(["PUT"], "/notifications/tokens", "notifications", REQUIRED),
+    ProxyRoute(["GET"], "/notifications/unread-count", "notifications", REQUIRED),
+    ProxyRoute(["POST"], "/notifications/read", "notifications", REQUIRED),
+    ProxyRoute(["GET"], "/notifications", "notifications", REQUIRED),
 ]
 
 

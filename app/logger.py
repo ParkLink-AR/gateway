@@ -1,3 +1,4 @@
+import logging
 import re
 import sys
 
@@ -24,8 +25,32 @@ def mask_sensitive_data(record):
     return True
 
 
+# The app's live-notifications WebSocket carries the access token in its query string
+# (browsers and React Native can't set headers on one), and uvicorn logs every WebSocket's
+# full path when it opens.
+_QUERY_TOKEN = re.compile(r"(token=)[^&\s\"']+", re.IGNORECASE)
+
+
+class RedactQueryTokenFilter(logging.Filter):
+    """Masks `token=...` in uvicorn's own (stdlib) log lines."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if isinstance(record.msg, str):
+            record.msg = _QUERY_TOKEN.sub(r"\1***REDACTED***", record.msg)
+        if record.args:
+            args = record.args if isinstance(record.args, tuple) else (record.args,)
+            record.args = tuple(
+                _QUERY_TOKEN.sub(r"\1***REDACTED***", arg) if isinstance(arg, str) else arg for arg in args
+            )
+        return True
+
+
 def setup_logger():
     logger.remove()
+    for name in ("uvicorn.error", "uvicorn.access"):
+        stdlib_logger = logging.getLogger(name)
+        if not any(isinstance(f, RedactQueryTokenFilter) for f in stdlib_logger.filters):
+            stdlib_logger.addFilter(RedactQueryTokenFilter())
 
     if settings.ENVIRONMENT == "development":
         logger.add(

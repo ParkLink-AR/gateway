@@ -12,9 +12,10 @@ from app.config import settings
 # payment-service publish domain events here (booking.confirmed,
 # booking.reminder, booking.cancelled, payment.completed -- see
 # notifications-service/README.md) and notifications-service binds queues to
-# it. The gateway doesn't consume anything itself; it just owns declaring the
-# exchange so it exists before those services come online, and exposes
-# publish_event() for anything the gateway itself needs to announce.
+# it. This client owns declaring the exchange so it exists before those services
+# come online, and exposes publish_event() for anything the gateway itself needs to
+# announce. The one thing the gateway consumes -- notification.created, relayed to
+# the app's open sockets -- has its own connection in app/live.py.
 EVENTS_EXCHANGE_TYPE = aio_pika.ExchangeType.TOPIC
 
 

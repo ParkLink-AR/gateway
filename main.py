@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 
 import httpx
@@ -5,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 
+from app import live
 from app.config import settings
 from app.logger import setup_logger
 from app.middleware import AccessLogMiddleware, RateLimitMiddleware, SecurityHeadersMiddleware
@@ -19,8 +21,16 @@ setup_logger()
 async def lifespan(app: FastAPI):
     app.state.http_client = httpx.AsyncClient(timeout=settings.UPSTREAM_TIMEOUT_SECONDS)
     await rabbitmq_client.connect()
+    stop_live = asyncio.Event()
+    live_task = asyncio.create_task(live.run_consumer(stop_live))
     logger.info("[STARTUP] ParkLink Gateway iniciado")
     yield
+    stop_live.set()
+    live_task.cancel()
+    try:
+        await live_task
+    except asyncio.CancelledError:
+        pass
     await app.state.http_client.aclose()
     await rabbitmq_client.close()
     logger.info("[SHUTDOWN] ParkLink Gateway detenido")
@@ -40,6 +50,7 @@ app.add_middleware(
 )
 
 register_routes(app)
+app.add_api_websocket_route("/notifications/live", live.live_endpoint)
 
 
 @app.get("/livez", tags=["health"])
@@ -64,5 +75,6 @@ def health():
     return {
         "status": "ok",
         "rabbitmq": "connected" if rabbitmq_client.is_connected else "disconnected",
+        "live_connections": live.hub.connection_count(),
         "services_configured": configured_services,
     }
