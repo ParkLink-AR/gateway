@@ -81,6 +81,8 @@ ROUTE_TABLE: list[ProxyRoute] = [
     # directly.
     ProxyRoute(["GET"], "/users/{id}/vehicles", "auth", REQUIRED),
     ProxyRoute(["POST"], "/users/{id}/vehicles", "auth", REQUIRED),
+    # Fills in the type of a vehicle saved before vehicles had one.
+    ProxyRoute(["PATCH"], "/users/{id}/vehicles/{vehicle_id}", "auth", REQUIRED),
     ProxyRoute(["DELETE"], "/users/{id}/vehicles/{vehicle_id}", "auth", REQUIRED),
     ProxyRoute(["POST"], "/users/{id}/password/verify", "auth", REQUIRED),
     ProxyRoute(["PUT"], "/users/{id}/password", "auth", REQUIRED),
@@ -239,6 +241,13 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["GET"], "/payments/refund-status/{booking_id}", "payment", REQUIRED),
     # No /payments/{payment_id} or /payments/external-reference/{ref}: those lookups are
     # staff-only on payment-service (they carry the payer's email) and nothing routes them.
+    # Refunds Mercado Pago failed, ParkLink-staff side (admin-dashboard's "Reembolsos
+    # pendientes") -- ADMIN. payment-service serves these at /admin/refunds/* as-is (no
+    # /api/payments prefix), and checks the admin role again itself.
+    ProxyRoute(["GET"], "/admin/refunds/count", "payment", ADMIN),
+    ProxyRoute(["POST"], "/admin/refunds/{payment_id}/retry", "payment", ADMIN),
+    ProxyRoute(["POST"], "/admin/refunds/{payment_id}/resolve", "payment", ADMIN),
+    ProxyRoute(["GET"], "/admin/refunds", "payment", ADMIN),
     # -- notifications-service ----------------------------------------
     # The device-token registry (push), and the user's own notifications inbox -- the
     # list behind the app's notifications tab and its unread badge. The live "something

@@ -521,3 +521,49 @@ def test_spot_verification_photos_upload_requires_auth_and_forwards_to_parking(c
     forwarded = client._mock_calls[0]
     assert forwarded.url.host == "parking-service.test"
     assert forwarded.url.path == "/parking-spots/spot-1/verification-photos"
+
+
+def test_admin_refunds_route_with_non_admin_token_is_forbidden(client):
+    token = make_access_token(user_id="66666666-6666-6666-6666-666666666666")
+
+    response = client.get("/admin/refunds", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 403
+    assert client._mock_calls == []
+
+
+def test_admin_refunds_routes_with_admin_token_forward_to_payment_service_as_is(client):
+    token = make_access_token(user_id="admin-1", role="admin")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    assert client.get("/admin/refunds", headers=headers).status_code == 200
+    assert client.get("/admin/refunds/count", headers=headers).status_code == 200
+    assert client.post("/admin/refunds/182168894549/retry", headers=headers).status_code == 200
+    assert client.post(
+        "/admin/refunds/182168894549/resolve", headers=headers, json={"resolution": "discarded", "note": "prueba"}
+    ).status_code == 200
+
+    forwarded = [(call.method, call.url.host, call.url.path) for call in client._mock_calls]
+    assert forwarded == [
+        ("GET", "payment-service.test", "/admin/refunds"),
+        ("GET", "payment-service.test", "/admin/refunds/count"),
+        ("POST", "payment-service.test", "/admin/refunds/182168894549/retry"),
+        ("POST", "payment-service.test", "/admin/refunds/182168894549/resolve"),
+    ]
+    # payment-service re-checks the admin role from the token itself.
+    assert all(call.headers["authorization"] == f"Bearer {token}" for call in client._mock_calls)
+
+
+def test_vehicle_type_update_route_forwards_to_auth_service(client):
+    token = make_access_token(user_id="11111111-1111-1111-1111-111111111111")
+
+    response = client.patch(
+        "/users/11111111-1111-1111-1111-111111111111/vehicles/22222222-2222-2222-2222-222222222222",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"type": "car"},
+    )
+
+    assert response.status_code == 200
+    forwarded = client._mock_calls[0]
+    assert forwarded.url.host == "auth-service.test"
+    assert forwarded.method == "PATCH"
