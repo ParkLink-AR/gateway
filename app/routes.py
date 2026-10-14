@@ -104,6 +104,11 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["POST"], "/bookings/{id}/verify-code", "booking", REQUIRED),
     ProxyRoute(["POST"], "/bookings/{id}/reviews", "booking", REQUIRED),
     ProxyRoute(["POST"], "/bookings/{id}/cancel", "booking", REQUIRED),
+    # The owner calling off a booking they accepted; the driver extending one; how to get in.
+    ProxyRoute(["POST"], "/bookings/{id}/owner-cancel", "booking", REQUIRED),
+    ProxyRoute(["GET"], "/bookings/{id}/extension-options", "booking", REQUIRED),
+    ProxyRoute(["POST"], "/bookings/{id}/extend", "booking", REQUIRED),
+    ProxyRoute(["GET"], "/bookings/{id}/access", "booking", REQUIRED),
     ProxyRoute(["POST"], "/bookings/{id}/messages", "booking", REQUIRED),
     ProxyRoute(["GET"], "/bookings/{id}/reviews", "booking", REQUIRED),
     ProxyRoute(["GET"], "/bookings/{id}/messages", "booking", REQUIRED),
@@ -198,6 +203,7 @@ ROUTE_TABLE: list[ProxyRoute] = [
     # Bank detail history of an owner, and what admins did from the panel (recorded by
     # this gateway, see app/audit.py).
     ProxyRoute(["GET"], "/admin/users/{id}/payout-info-history", "auth", ADMIN),
+    ProxyRoute(["GET"], "/admin/owners/{id}/cancellation-stats", "booking", ADMIN),
     ProxyRoute(["GET"], "/admin/audit-log", "auth", ADMIN),
     # Admin-account management (creating/listing/deactivating ParkLink-staff
     # accounts). Gateway only enforces the blanket role:"admin" claim here --
@@ -238,6 +244,9 @@ ROUTE_TABLE: list[ProxyRoute] = [
     # que subir/borrar fotos: sólo el dueño de la cochera.
     ProxyRoute(["POST"], "/parking-spots/{id}/verification-photos", "parking", REQUIRED),
     ProxyRoute(["PATCH"], "/parking-spots/{id}/status", "parking", REQUIRED),
+    # The owner's private access instructions, and the days they closed the spot.
+    ProxyRoute(["GET"], "/parking-spots/{id}/access", "parking", REQUIRED),
+    ProxyRoute(["PUT"], "/parking-spots/{id}/blocked-dates", "parking", REQUIRED),
     ProxyRoute(["PUT"], "/parking-spots/{id}/pricing", "parking", REQUIRED),
     ProxyRoute(["PUT"], "/parking-spots/{id}/schedule", "parking", REQUIRED),
     ProxyRoute(["GET"], "/parking-spots/{id}", "parking", PUBLIC),
