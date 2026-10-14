@@ -501,7 +501,10 @@ def test_admin_parking_spots_review_routes_forward_to_parking_with_admin_token(c
     client.get("/admin/parking-spots/spot-1", headers=headers)
     client.patch("/admin/parking-spots/spot-1/review", headers=headers, json={"decision": "approved"})
 
-    forwarded = [(c.method, c.url.host, c.url.path) for c in client._mock_calls]
+    calls = [(c.method, c.url.host, c.url.path) for c in client._mock_calls]
+    # The approval/rejection (a write) is also recorded in the admin audit log.
+    assert ("POST", "auth-service.test", "/internal/admin-audit") in calls
+    forwarded = [call for call in calls if call[2] != "/internal/admin-audit"]
     assert forwarded == [
         ("GET", "parking-service.test", "/admin/parking-spots"),
         ("GET", "parking-service.test", "/admin/parking-spots/spot-1"),
@@ -543,7 +546,10 @@ def test_admin_refunds_routes_with_admin_token_forward_to_payment_service_as_is(
         "/admin/refunds/182168894549/resolve", headers=headers, json={"resolution": "discarded", "note": "prueba"}
     ).status_code == 200
 
-    forwarded = [(call.method, call.url.host, call.url.path) for call in client._mock_calls]
+    forwarded = [
+        (call.method, call.url.host, call.url.path) for call in client._mock_calls
+        if call.url.path != "/internal/admin-audit"  # admin writes are also logged (app/audit.py)
+    ]
     assert forwarded == [
         ("GET", "payment-service.test", "/admin/refunds"),
         ("GET", "payment-service.test", "/admin/refunds/count"),
@@ -551,7 +557,11 @@ def test_admin_refunds_routes_with_admin_token_forward_to_payment_service_as_is(
         ("POST", "payment-service.test", "/admin/refunds/182168894549/resolve"),
     ]
     # payment-service re-checks the admin role from the token itself.
-    assert all(call.headers["authorization"] == f"Bearer {token}" for call in client._mock_calls)
+    assert all(
+        call.headers["authorization"] == f"Bearer {token}"
+        for call in client._mock_calls
+        if call.url.path != "/internal/admin-audit"  # the audit call carries the gateway secret instead
+    )
 
 
 def test_vehicle_type_update_route_forwards_to_auth_service(client):

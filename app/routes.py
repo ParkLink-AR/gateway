@@ -149,6 +149,24 @@ ROUTE_TABLE: list[ProxyRoute] = [
     # the owner's payout waits until an admin approves (pays out) or refunds each one.
     ProxyRoute(["POST"], "/admin/bookings/{id}/verification-review", "booking", ADMIN),
     ProxyRoute(["GET"], "/admin/bookings/unverified", "booking", ADMIN),
+    # -- admin panel tools (booking-service's AdminOpsHandler): booking search, cancel or
+    # refund one, read its chat; review moderation; reports; the dashboard's numbers.
+    # /admin/bookings/{id} goes after /admin/bookings/unverified so that one isn't taken
+    # for an id.
+    ProxyRoute(["GET"], "/admin/bookings", "booking", ADMIN),
+    ProxyRoute(["GET"], "/admin/bookings/{id}/messages", "booking", ADMIN),
+    ProxyRoute(["POST"], "/admin/bookings/{id}/cancel", "booking", ADMIN),
+    ProxyRoute(["POST"], "/admin/bookings/{id}/refund", "booking", ADMIN),
+    ProxyRoute(["GET"], "/admin/bookings/{id}", "booking", ADMIN),
+    ProxyRoute(["GET"], "/admin/reviews", "booking", ADMIN),
+    ProxyRoute(["POST"], "/admin/reviews/{id}/hide", "booking", ADMIN),
+    ProxyRoute(["POST"], "/admin/reviews/{id}/restore", "booking", ADMIN),
+    ProxyRoute(["GET"], "/admin/reports/count", "booking", ADMIN),
+    ProxyRoute(["GET"], "/admin/reports", "booking", ADMIN),
+    ProxyRoute(["POST"], "/admin/reports/{id}/resolve", "booking", ADMIN),
+    ProxyRoute(["GET"], "/admin/metrics", "booking", ADMIN),
+    # A user reporting a spot, a person or a review from the app.
+    ProxyRoute(["POST"], "/reports", "booking", REQUIRED),
     ProxyRoute(["GET"], "/admin/owners/{id}/bookings", "booking", ADMIN),
     # Who currently has an unsettled balance -- the admin panel's starting
     # point for deciding who to pay next.
@@ -177,6 +195,10 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["POST"], "/admin/users/{id}/deletion", "auth", ADMIN),
     ProxyRoute(["GET"], "/admin/users/{id}", "auth", ADMIN),
     ProxyRoute(["GET"], "/admin/users", "auth", ADMIN),
+    # Bank detail history of an owner, and what admins did from the panel (recorded by
+    # this gateway, see app/audit.py).
+    ProxyRoute(["GET"], "/admin/users/{id}/payout-info-history", "auth", ADMIN),
+    ProxyRoute(["GET"], "/admin/audit-log", "auth", ADMIN),
     # Admin-account management (creating/listing/deactivating ParkLink-staff
     # accounts). Gateway only enforces the blanket role:"admin" claim here --
     # the finer SUPERADMIN-only check happens inside auth-service itself
@@ -230,6 +252,8 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["GET"], "/admin/parking-spots/{id}", "parking", ADMIN),
     ProxyRoute(["PATCH"], "/admin/parking-spots/{id}/review", "parking", ADMIN),
     ProxyRoute(["GET"], "/admin/parking-spots", "parking", ADMIN),
+    # Suspend a published spot (report, problem) or restore it.
+    ProxyRoute(["PATCH"], "/admin/parking-spots/{id}/moderation", "parking", ADMIN),
     # -- payment-service (mounted at /api/payments/* downstream) --------
     ProxyRoute(["GET"], "/payments/metrics", "payment", REQUIRED),
     ProxyRoute(["POST"], "/payments/create-preference", "payment", REQUIRED),
@@ -248,6 +272,8 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["POST"], "/admin/refunds/{payment_id}/retry", "payment", ADMIN),
     ProxyRoute(["POST"], "/admin/refunds/{payment_id}/resolve", "payment", ADMIN),
     ProxyRoute(["GET"], "/admin/refunds", "payment", ADMIN),
+    # Every payment, flagging approved ones whose booking never got paid on our side.
+    ProxyRoute(["GET"], "/admin/payments", "payment", ADMIN),
     # -- notifications-service ----------------------------------------
     # The device-token registry (push), and the user's own notifications inbox -- the
     # list behind the app's notifications tab and its unread badge. The live "something
@@ -258,6 +284,9 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["GET"], "/notifications/unread-count", "notifications", REQUIRED),
     ProxyRoute(["POST"], "/notifications/read", "notifications", REQUIRED),
     ProxyRoute(["GET"], "/notifications", "notifications", REQUIRED),
+    # Announcements staff send from the admin panel to every user in an audience.
+    ProxyRoute(["POST"], "/admin/broadcasts", "notifications", ADMIN),
+    ProxyRoute(["GET"], "/admin/broadcasts", "notifications", ADMIN),
 ]
 
 

@@ -74,3 +74,11 @@ def authenticate_admin(authorization_header: str | None) -> tuple[str, str | Non
     if payload.get("role") != "admin":
         raise NotAdminError("Admin privileges required")
     return payload["sub"], payload.get("admin_role")
+
+
+def admin_username(authorization_header: str | None) -> str | None:
+    """The admin's username claim, for the audit log -- None if the token can't be read."""
+    try:
+        return decode_access_token(extract_bearer_token(authorization_header)).get("admin_username")
+    except InvalidTokenError:
+        return None

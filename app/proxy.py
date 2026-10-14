@@ -10,7 +10,8 @@ from loguru import logger
 
 from app.config import settings
 from app.problem_json import problem_response
-from app.security import InvalidTokenError, NotAdminError, authenticate, authenticate_admin
+from app.audit import record_admin_action
+from app.security import InvalidTokenError, NotAdminError, admin_username, authenticate, authenticate_admin
 
 # Headers that are per-hop or get recomputed by httpx/the ASGI server; forwarding
 # them verbatim (in either direction) would corrupt the proxied response.
@@ -53,7 +54,8 @@ def _service_base_url(service: str) -> str:
 def _downstream_path(service: str, gateway_path: str) -> str:
     # payment-service mounts its API under /api/payments/*, everything else
     # mirrors the gateway path 1:1.
-    if service == "payment":
+    # Only a path that starts with it: /admin/payments is payment-service's own admin route.
+    if service == "payment" and gateway_path.startswith("/payments"):
         return gateway_path.replace("/payments", "/api/payments", 1)
     return gateway_path
 
@@ -135,6 +137,17 @@ def make_proxy_handler(service: str, auth_mode: AuthMode) -> Callable:
         except httpx.ConnectError as exc:
             logger.warning(f"[PROXY] Connection error forwarding {request.method} {url}: {exc}")
             return problem_response(request, 503, "Service Unavailable", f"{service}-service is unreachable")
+
+        if auth_mode is AuthMode.ADMIN:
+            record_admin_action(
+                client,
+                admin_id=user_id,
+                admin_username=admin_username(request.headers.get("authorization")),
+                method=request.method,
+                path=request.url.path,
+                status_code=upstream_response.status_code,
+                body=body,
+            )
 
         return Response(
             content=upstream_response.content,
