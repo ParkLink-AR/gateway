@@ -13,6 +13,7 @@ from app.middleware import AccessLogMiddleware, RateLimitMiddleware, SecurityHea
 from app.proxy import SERVICE_BASE_URL_ATTR
 from app.rabbitmq import rabbitmq_client
 from app.routes import register_routes
+from app.monitoring import init_monitoring
 
 setup_logger()
 
@@ -35,6 +36,8 @@ async def lifespan(app: FastAPI):
     await rabbitmq_client.close()
     logger.info("[SHUTDOWN] ParkLink Gateway detenido")
 
+
+init_monitoring()
 
 app = FastAPI(title="ParkLink Gateway", version="1.0.0", lifespan=lifespan)
 
