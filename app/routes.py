@@ -102,6 +102,12 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["POST"], "/bookings/{id}/approve", "booking", REQUIRED),
     ProxyRoute(["POST"], "/bookings/{id}/reject", "booking", REQUIRED),
     ProxyRoute(["POST"], "/bookings/{id}/verify-code", "booking", REQUIRED),
+    # The driver's exit code (GET) and the owner entering it as the vehicle leaves (POST): how a
+    # verified hourly booking ends, and how long past its end the driver stayed.
+    ProxyRoute(["GET"], "/bookings/{id}/exit", "booking", REQUIRED),
+    ProxyRoute(["POST"], "/bookings/{id}/verify-exit", "booking", REQUIRED),
+    # What the driver owes for staying past the end of earlier bookings: charged on their next reservation.
+    ProxyRoute(["GET"], "/debts", "booking", REQUIRED),
     ProxyRoute(["POST"], "/bookings/{id}/reviews", "booking", REQUIRED),
     ProxyRoute(["POST"], "/bookings/{id}/cancel", "booking", REQUIRED),
     # The owner calling off a booking they accepted; the driver extending one; how to get in.
@@ -162,6 +168,11 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["GET"], "/admin/bookings/{id}/messages", "booking", ADMIN),
     ProxyRoute(["POST"], "/admin/bookings/{id}/cancel", "booking", ADMIN),
     ProxyRoute(["POST"], "/admin/bookings/{id}/refund", "booking", ADMIN),
+    # A booking whose exit code never got entered stays in progress: support records when the
+    # vehicle left (and sees how it stands).
+    ProxyRoute(["GET"], "/admin/bookings/{id}/exit", "booking", ADMIN),
+    ProxyRoute(["POST"], "/admin/bookings/{id}/close", "booking", ADMIN),
+    ProxyRoute(["GET"], "/admin/bookings/{id}/debts", "booking", ADMIN),
     ProxyRoute(["GET"], "/admin/bookings/{id}", "booking", ADMIN),
     ProxyRoute(["GET"], "/admin/reviews", "booking", ADMIN),
     ProxyRoute(["POST"], "/admin/reviews/{id}/hide", "booking", ADMIN),
