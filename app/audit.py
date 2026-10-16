@@ -20,6 +20,7 @@ WRITE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 SUMMARY_FIELDS = (
     "reason", "note", "notes", "status", "decision", "action", "amount", "refund_amount",
     "resolution", "commission_rate_bp", "title", "audience", "is_active", "role", "username",
+    "exited_at",
 )
 
 

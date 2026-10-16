@@ -9,6 +9,10 @@ def test_summary_keeps_only_the_interesting_fields():
     assert audit.summarize(body) == "reason: Fotos falsas \xb7 amount: 250000"
 
 
+def test_summary_keeps_when_support_says_the_vehicle_left():
+    assert audit.summarize(b'{"exited_at": "2026-10-12T20:30:00-03:00"}') == "exited_at: 2026-10-12T20:30:00-03:00"
+
+
 def test_summary_of_a_body_that_is_not_json_is_empty():
     assert audit.summarize(b"--multipart--") is None
     assert audit.summarize(b"") is None

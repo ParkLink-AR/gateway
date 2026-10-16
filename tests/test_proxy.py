@@ -152,6 +152,62 @@ def test_bookings_verify_code_without_token_is_rejected(client):
     assert client._mock_calls == []
 
 
+def test_bookings_exit_code_routes_require_auth(client):
+    assert client.get("/bookings/some-booking-id/exit").status_code == 401
+    assert client.post("/bookings/some-booking-id/verify-exit", json={"code": "9542"}).status_code == 401
+    assert client._mock_calls == []
+
+
+def test_bookings_exit_code_routes_get_past_auth_with_a_user_token(client):
+    # booking-service has no mock host in this suite (see the verify-code test above): a valid
+    # token gets past auth (503, not 401) with no upstream call made.
+    token = make_access_token(user_id="55555555-5555-5555-5555-555555555555")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    assert client.get("/bookings/some-booking-id/exit", headers=headers).status_code == 503
+    assert client.post("/bookings/some-booking-id/verify-exit", json={"code": "9542"}, headers=headers).status_code == 503
+    assert client._mock_calls == []
+
+
+def test_admin_close_booking_is_admin_only(client):
+    user = make_access_token(user_id="66666666-6666-6666-6666-666666666666")
+    admin = make_access_token(user_id="admin-1", role="admin")
+    body = {"exited_at": "2026-10-12T20:30:00-03:00"}
+
+    assert client.post("/admin/bookings/some-booking-id/close", json=body).status_code == 401
+    assert client.post("/admin/bookings/some-booking-id/close", json=body, headers={"Authorization": f"Bearer {user}"}).status_code == 403
+    assert client.post("/admin/bookings/some-booking-id/close", json=body, headers={"Authorization": f"Bearer {admin}"}).status_code == 503
+    assert client.get("/admin/bookings/some-booking-id/exit", headers={"Authorization": f"Bearer {user}"}).status_code == 403
+    assert client._mock_calls == []
+
+
+def test_my_debts_require_auth_and_get_past_it_with_a_user_token(client):
+    assert client.get("/debts").status_code == 401
+    token = make_access_token(user_id="77777777-7777-7777-7777-777777777777")
+
+    assert client.get("/debts", headers={"Authorization": f"Bearer {token}"}).status_code == 503
+    assert client._mock_calls == []
+
+
+def test_a_bookings_debts_are_admin_only(client):
+    user = make_access_token(user_id="66666666-6666-6666-6666-666666666666")
+    admin = make_access_token(user_id="admin-1", role="admin")
+
+    assert client.get("/admin/bookings/some-booking-id/debts").status_code == 401
+    assert client.get("/admin/bookings/some-booking-id/debts", headers={"Authorization": f"Bearer {user}"}).status_code == 403
+    assert client.get("/admin/bookings/some-booking-id/debts", headers={"Authorization": f"Bearer {admin}"}).status_code == 503
+    assert client._mock_calls == []
+
+
+def test_the_internal_debts_of_a_booking_are_not_reachable_through_the_gateway(client):
+    token = make_access_token(user_id="77777777-7777-7777-7777-777777777777")
+
+    response = client.get("/internal/bookings/some-booking-id/debts", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code in (401, 403, 404)
+    assert client._mock_calls == []
+
+
 def test_notifications_token_register_requires_auth_and_forwards(client):
     token = make_access_token(user_id="33333333-3333-3333-3333-333333333333")
     response = client.put(
