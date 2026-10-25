@@ -55,6 +55,8 @@ ROUTE_TABLE: list[ProxyRoute] = [
     # Owner's own "Finanzas" history -- PAID settlements only (a still-PENDING draft is
     # hidden even from its own owner, see booking-service's GetOwnSettlementUseCase).
     ProxyRoute(["GET"], "/users/{id}/settlements", "booking", REQUIRED),
+    # Owner's own earnings summary for "Mis finanzas" (booking-service checks it's their own).
+    ProxyRoute(["GET"], "/users/{id}/earnings", "booking", REQUIRED),
     # Every support ticket this user has ever opened, across every booking -- the mobile
     # app's in-app notification feed uses this to surface support.ticket_replied without a
     # dedicated per-ticket poll.
@@ -246,6 +248,10 @@ ROUTE_TABLE: list[ProxyRoute] = [
     # Calendario de disponibilidad para elegir fecha de inicio de estadía --
     # mismo nivel de auth que .../stays/quote y .../availability, sólo lectura.
     ProxyRoute(["GET"], "/parking-spots/{id}/stays/availability", "parking", PUBLIC),
+    # "Media estadía (12 h)": its price, and the hours of a day it can start at -- read-only,
+    # same auth as the stay quote.
+    ProxyRoute(["GET"], "/parking-spots/{id}/half-days/quote", "parking", PUBLIC),
+    ProxyRoute(["GET"], "/parking-spots/{id}/half-days/starts", "parking", PUBLIC),
     ProxyRoute(["GET"], "/parking-spots/{id}/photos", "parking", PUBLIC),
     ProxyRoute(["POST"], "/parking-spots/{id}/photos", "parking", REQUIRED),
     ProxyRoute(["DELETE"], "/parking-spots/{id}/photos", "parking", REQUIRED),

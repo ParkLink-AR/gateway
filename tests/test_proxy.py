@@ -633,3 +633,25 @@ def test_vehicle_type_update_route_forwards_to_auth_service(client):
     forwarded = client._mock_calls[0]
     assert forwarded.url.host == "auth-service.test"
     assert forwarded.method == "PATCH"
+
+
+def test_owner_earnings_route_without_token_is_rejected(client):
+    response = client.get("/users/some-owner-id/earnings")
+
+    assert response.status_code == 401
+    assert client._mock_calls == []
+
+
+def test_half_day_routes_are_public_and_forward_to_parking(client):
+    spot = "33333333-3333-3333-3333-333333333333"
+    for path, params in (
+        (f"/parking-spots/{spot}/half-days/quote", {"date": "2026-11-02", "startHour": "20"}),
+        (f"/parking-spots/{spot}/half-days/starts", {"date": "2026-11-02"}),
+    ):
+        response = client.get(path, params=params)
+
+        assert response.status_code == 200
+        forwarded = client._mock_calls[-1]
+        assert forwarded.url.host == "parking-service.test"
+        assert forwarded.url.path == path
+        assert dict(forwarded.url.params) == params
