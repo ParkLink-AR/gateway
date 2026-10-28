@@ -284,6 +284,9 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["GET"], "/payments/metrics", "payment", REQUIRED),
     ProxyRoute(["POST"], "/payments/create-preference", "payment", REQUIRED),
     ProxyRoute(["POST"], "/payments/webhook", "payment", PUBLIC),
+    # payment-service sends Mercado Pago WEBHOOK_BASE_URL + /api/payments/webhook as the
+    # notification_url, so the same path has to work when that base is the gateway.
+    ProxyRoute(["POST"], "/api/payments/webhook", "payment", PUBLIC),
     # REQUIRED: payment-service also checks the booking is the caller's own.
     ProxyRoute(["POST"], "/payments/verify-status", "payment", REQUIRED),
     # Where a cancelled booking's refund stands -- payment-service checks it's the

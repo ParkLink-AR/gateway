@@ -75,6 +75,15 @@ def test_payment_webhook_is_public(client):
     assert forwarded.url.path == "/api/payments/webhook"
 
 
+def test_payment_webhook_under_api_prefix_is_public(client):
+    # The notification_url payment-service hands Mercado Pago when WEBHOOK_BASE_URL is the gateway.
+    response = client.post("/api/payments/webhook", json={"type": "payment"})
+
+    assert response.status_code == 200
+    forwarded = client._mock_calls[0]
+    assert forwarded.url.path == "/api/payments/webhook"
+
+
 def test_removed_payment_routes_are_not_proxied(client):
     # /payments/redirect never had a handler; the transaction lookups are staff-only on
     # payment-service and unused by the app; /bookings/{id}/confirm is payment-service-only.
