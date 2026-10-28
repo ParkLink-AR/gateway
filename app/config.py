@@ -1,3 +1,5 @@
+import sys
+
 from pydantic import ConfigDict, model_validator
 from pydantic_settings import BaseSettings
 
@@ -55,4 +57,5 @@ class Settings(BaseSettings):
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
 
 
-settings = Settings()
+# Tests must not pick up the developer's real .env (real secrets).
+settings = Settings(_env_file=None if "pytest" in sys.modules else ".env")
