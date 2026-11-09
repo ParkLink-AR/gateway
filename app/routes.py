@@ -289,6 +289,9 @@ ROUTE_TABLE: list[ProxyRoute] = [
     ProxyRoute(["POST"], "/api/payments/webhook", "payment", PUBLIC),
     # REQUIRED: payment-service also checks the booking is the caller's own.
     ProxyRoute(["POST"], "/payments/verify-status", "payment", REQUIRED),
+    # Demo only: the app's "Consultar pago" button, to take the caller's own booking as paid
+    # when Mercado Pago fails. payment-service refuses it unless ALLOW_FORCE_PAYMENT_APPROVAL=true.
+    ProxyRoute(["POST"], "/payments/force-approve", "payment", REQUIRED),
     # Where a cancelled booking's refund stands -- payment-service checks it's the
     # caller's own booking.
     ProxyRoute(["GET"], "/payments/refund-status/{booking_id}", "payment", REQUIRED),
